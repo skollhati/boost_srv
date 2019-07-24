@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+*.ipch
+.vs/boost_srv/v16/Browse.VC.opendb
+.vs/boost_srv/v16/Browse.VC.db
