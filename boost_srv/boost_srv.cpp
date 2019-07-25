@@ -2,6 +2,12 @@
 //
 
 #include <iostream>
+#include "bredis/Extract.hpp"
+#include "bredis/MarkerHelpers.hpp"
+#include "boost/iostreams/stream_buffer.hpp"
+#include "boost/asio/streambuf.hpp"
+
+
 
 int main()
 {
