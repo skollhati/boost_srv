@@ -6,12 +6,15 @@
 #include "bredis/MarkerHelpers.hpp"
 #include "boost/iostreams/stream_buffer.hpp"
 #include "boost/asio/streambuf.hpp"
-
+#include "stdafx.h"
 
 
 int main()
 {
+
     std::cout << "Hello World!\n";
+	BOOST_LOG_SEV(boostLogger.lg, trace) << "hi";
+
 }
 
 // 프로그램 실행: <Ctrl+F5> 또는 [디버그] > [디버깅하지 않고 시작] 메뉴
