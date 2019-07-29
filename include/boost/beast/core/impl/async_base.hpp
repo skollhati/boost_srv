@@ -42,9 +42,8 @@ struct allocate_stable_state final
                 allocate_stable_state>;
 
         A a(this->get());
-        auto* p = this;
-        p->~allocate_stable_state();
-        a.deallocate(p, 1);
+        detail::allocator_traits<A>::destroy(a, this);
+        detail::allocator_traits<A>::deallocate(a, this, 1);
     }
 };
 
@@ -119,30 +118,33 @@ allocate_stable(
 {
     using allocator_type = typename stable_async_base<
         Handler, Executor1, Allocator>::allocator_type;
-    using state = detail::allocate_stable_state<
-        State, allocator_type>;
+
     using A = typename detail::allocator_traits<
-        allocator_type>::template rebind_alloc<state>;
+        allocator_type>::template rebind_alloc<
+            detail::allocate_stable_state<
+                State, allocator_type>>;
 
     struct deleter
     {
         allocator_type alloc;
-        state* ptr;
+        detail::allocate_stable_state<
+            State, allocator_type>* ptr;
 
         ~deleter()
         {
             if(ptr)
             {
                 A a(alloc);
-                a.deallocate(ptr, 1);
+                detail::allocator_traits<A>::deallocate(a, ptr, 1);
             }
         }
     };
 
     A a(base.get_allocator());
-    deleter d{base.get_allocator(), a.allocate(1)};
-    ::new(static_cast<void*>(d.ptr))
-        state(d.alloc, std::forward<Args>(args)...);
+    deleter d{base.get_allocator(), nullptr};
+    d.ptr = detail::allocator_traits<A>::allocate(a, 1);
+    detail::allocator_traits<A>::construct(a, d.ptr,
+        d.alloc, std::forward<Args>(args)...);
     d.ptr->next_ = base.list_;
     base.list_ = d.ptr;
     return boost::exchange(d.ptr, nullptr)->value;

@@ -15,6 +15,7 @@
 #include <boost/beast/http/error.hpp>
 #include <boost/beast/http/message.hpp>
 #include <boost/beast/core/detail/clamp.hpp>
+#include <boost/beast/core/detail/type_traits.hpp>
 #include <boost/asio/buffer.hpp>
 #include <boost/optional.hpp>
 #include <cstdint>
@@ -38,7 +39,8 @@ template<class T, class Allocator = std::allocator<T>>
 struct vector_body
 {
 private:
-    static_assert(sizeof(T) == 1,
+    static_assert(sizeof(T) == 1 &&
+        std::is_integral<T>::value,
         "T requirements not met");
 
 public:

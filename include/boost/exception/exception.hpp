@@ -165,7 +165,7 @@ boost
 
             protected:
 
-            ~error_info_container() BOOST_NOEXCEPT_OR_NOTHROW
+            ~error_info_container() throw()
                 {
                 }
             };
@@ -233,7 +233,7 @@ boost
 #ifdef __HP_aCC
         //On HP aCC, this protected copy constructor prevents throwing boost::exception.
         //On all other platforms, the same effect is achieved by the pure virtual destructor.
-        exception( exception const & x ) BOOST_NOEXCEPT_OR_NOTHROW:
+        exception( exception const & x ) throw():
             data_(x.data_),
             throw_function_(x.throw_function_),
             throw_file_(x.throw_file_),
@@ -242,7 +242,7 @@ boost
             }
 #endif
 
-        virtual ~exception() BOOST_NOEXCEPT_OR_NOTHROW
+        virtual ~exception() throw()
 #ifndef __HP_aCC
             = 0 //Workaround for HP aCC, =0 incorrectly leads to link errors.
 #endif
@@ -287,7 +287,7 @@ boost
 
     inline
     exception::
-    ~exception() BOOST_NOEXCEPT_OR_NOTHROW
+    ~exception() throw()
         {
         }
 
@@ -337,7 +337,7 @@ boost
                 {
                 }
 
-            ~error_info_injector() BOOST_NOEXCEPT_OR_NOTHROW
+            ~error_info_injector() throw()
                 {
                 }
             };
@@ -398,7 +398,7 @@ boost
             virtual void rethrow() const = 0;
 
             virtual
-            ~clone_base() BOOST_NOEXCEPT_OR_NOTHROW
+            ~clone_base() throw()
                 {
                 }
             };
@@ -445,7 +445,7 @@ boost
                 copy_boost_exception(this,&x);
                 }
 
-            ~clone_impl() BOOST_NOEXCEPT_OR_NOTHROW
+            ~clone_impl() throw()
                 {
                 }
 
@@ -487,7 +487,7 @@ boost
             {
             }
 
-        ~wrapexcept() BOOST_NOEXCEPT_OR_NOTHROW
+        ~wrapexcept() throw()
             {
             }
         };

@@ -3,7 +3,7 @@
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE_1_0.txt or copy at
-//   https://www.boost.org/LICENSE_1_0.txt)
+//   http://www.boost.org/LICENCE_1_0.txt)
 //
 // std::hash support for uuid
 //
@@ -13,7 +13,7 @@
 
 #include <boost/config.hpp>
 #include <boost/container_hash/hash.hpp>
-#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_io.hpp>
 
 #ifdef BOOST_HAS_PRAGMA_ONCE
 #pragma once
@@ -31,7 +31,7 @@ namespace std
     {
         std::size_t operator () (const boost::uuids::uuid& value) const BOOST_NOEXCEPT
         {
-            return boost::uuids::hash_value(value);
+            return boost::hash_value(to_string(value));
         }
     };
 }

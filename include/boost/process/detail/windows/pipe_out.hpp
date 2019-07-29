@@ -13,7 +13,6 @@
 
 #include <boost/winapi/process.hpp>
 #include <boost/winapi/handles.hpp>
-#include <boost/process/detail/used_handles.hpp>
 #include <boost/process/detail/handler_base.hpp>
 
 namespace boost { namespace process { namespace detail { namespace windows {
@@ -21,11 +20,9 @@ namespace boost { namespace process { namespace detail { namespace windows {
 
 
 template<int p1, int p2>
-struct pipe_out : public ::boost::process::detail::handler_base, ::boost::process::detail::uses_handles
+struct pipe_out : public ::boost::process::detail::handler_base
 {
     ::boost::winapi::HANDLE_ handle;
-
-    ::boost::winapi::HANDLE_ get_used_handles() const { return handle; }
 
     pipe_out(::boost::winapi::HANDLE_ handle) : handle(handle) {}
     template<typename T>

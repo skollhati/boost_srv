@@ -105,7 +105,7 @@ boost
             boost::exception,
             std::bad_alloc
                 {
-                ~bad_alloc_() BOOST_NOEXCEPT_OR_NOTHROW { }
+                ~bad_alloc_() throw() { }
                 };
 
         struct
@@ -113,7 +113,7 @@ boost
             boost::exception,
             std::bad_exception
                 {
-                ~bad_exception_() BOOST_NOEXCEPT_OR_NOTHROW { }
+                ~bad_exception_() throw() { }
                 };
 
         template <class Exception>
@@ -174,7 +174,7 @@ boost
             add_original_type(e);
             }
 
-        ~unknown_exception() BOOST_NOEXCEPT_OR_NOTHROW
+        ~unknown_exception() throw()
             {
             }
 
@@ -220,7 +220,7 @@ boost
                 add_original_type(e1);
                 }
 
-            ~current_exception_std_exception_wrapper() BOOST_NOEXCEPT_OR_NOTHROW
+            ~current_exception_std_exception_wrapper() throw()
                 {
                 }
 

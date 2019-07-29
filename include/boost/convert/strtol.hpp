@@ -158,25 +158,23 @@ template<typename string_type, typename out_type>
 void
 boost::cnv::strtol::str_to_i(cnv::range<string_type> range, boost::optional<out_type>& result_out) const
 {
-    using     uint_type = unsigned int;
-    using unsigned_type = typename boost::make_unsigned<out_type>::type;
-    using    range_type = cnv::range<string_type>;
-    using      iterator = typename range_type::iterator;
+    typedef typename boost::make_unsigned<out_type>::type unsigned_type;
+    typedef cnv::range<string_type>                          range_type;
+    typedef typename range_type::iterator                      iterator;
 
     iterator             s = range.begin();
-    uint_type           ch = *s;
+    unsigned int        ch = *s;
     bool const is_negative = ch == '-' ? (ch = *++s, true) : ch == '+' ? (ch = *++s, false) : false;
     bool const is_unsigned = boost::is_same<out_type, unsigned_type>::value;
-    uint_type         base = uint_type(base_);
+    int               base = int(base_);
 
     /**/ if (is_negative && is_unsigned) return;
     else if ((base == 0 || base == 16) && ch == '0' && (*++s == 'x' || *s == 'X')) ++s, base = 16;
     else if (base == 0) base = ch == '0' ? (++s, 8) : 10;
 
-    unsigned_type const    max = (std::numeric_limits<out_type>::max)();
-    unsigned_type const   umax = max + (is_negative ? 1 : 0);
-    unsigned_type const cutoff = umax / base;
-    uint_type     const cutlim = umax % base;
+    unsigned_type const    max = (std::numeric_limits<out_type>::max)() + (is_negative ? 1 : 0);
+    unsigned_type const cutoff = max / base;
+    unsigned int  const cutlim = max % base;
     unsigned_type       result = 0;
 
     for (; s != range.sentry(); ++s)

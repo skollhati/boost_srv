@@ -39,7 +39,7 @@ struct get_turn_info_linear_linear
         typename UniqueSubRange1,
         typename UniqueSubRange2,
         typename TurnInfo,
-        typename UmbrellaStrategy,
+        typename IntersectionStrategy,
         typename RobustPolicy,
         typename OutputIterator
     >
@@ -47,7 +47,7 @@ struct get_turn_info_linear_linear
                 UniqueSubRange1 const& range_p,
                 UniqueSubRange2 const& range_q,
                 TurnInfo const& tp_model,
-                UmbrellaStrategy const& umbrella_strategy,
+                IntersectionStrategy const& strategy,
                 RobustPolicy const& robust_policy,
                 OutputIterator out)
     {
@@ -55,11 +55,11 @@ struct get_turn_info_linear_linear
             <
                 UniqueSubRange1, UniqueSubRange2,
                 typename TurnInfo::point_type,
-                UmbrellaStrategy,
+                IntersectionStrategy,
                 RobustPolicy
             > inters_info;
 
-        inters_info inters(range_p, range_q, umbrella_strategy, robust_policy);
+        inters_info inters(range_p, range_q, strategy, robust_policy);
 
         char const method = inters.d_info().how;
 
@@ -75,7 +75,7 @@ struct get_turn_info_linear_linear
                 get_turn_info_for_endpoint<true, true>
                     ::apply(range_p, range_q,
                             tp_model, inters, method_none, out,
-                            umbrella_strategy.get_point_in_point_strategy());
+                            strategy.get_point_in_point_strategy());
                 break;
 
             case 'd' : // disjoint: never do anything
@@ -86,7 +86,7 @@ struct get_turn_info_linear_linear
                 if ( get_turn_info_for_endpoint<false, true>
                         ::apply(range_p, range_q,
                                 tp_model, inters, method_touch_interior, out,
-                                umbrella_strategy.get_point_in_point_strategy()) )
+                                strategy.get_point_in_point_strategy()) )
                 {
                     // do nothing
                 }
@@ -102,16 +102,14 @@ struct get_turn_info_linear_linear
                     {
                         policy::template apply<0>(range_p, range_q, tp,
                                                   inters.i_info(), inters.d_info(),
-                                                  inters.sides(),
-                                                  umbrella_strategy);
+                                                  inters.sides());
                     }
                     else
                     {
                         // Swap p/q
                         policy::template apply<1>(range_q, range_p, tp,
                                                   inters.i_info(), inters.d_info(),
-                                                  inters.get_swapped_sides(),
-                                                  umbrella_strategy);
+                                                  inters.get_swapped_sides());
                     }
                     
                     if ( tp.operations[0].operation == operation_blocked )
@@ -146,16 +144,14 @@ struct get_turn_info_linear_linear
                 if ( get_turn_info_for_endpoint<false, true>
                         ::apply(range_p, range_q,
                                 tp_model, inters, method_touch, out,
-                                umbrella_strategy.get_point_in_point_strategy()) )
+                                strategy.get_point_in_point_strategy()) )
                 {
                     // do nothing
                 }
                 else 
                 {
                     touch<TurnInfo>::apply(range_p, range_q, tp,
-                                           inters.i_info(), inters.d_info(),
-                                           inters.sides(),
-                                           umbrella_strategy);
+                                           inters.i_info(), inters.d_info(), inters.sides());
 
                     // workarounds for touch<> not taking spikes into account starts here
                     // those was discovered empirically
@@ -278,7 +274,7 @@ struct get_turn_info_linear_linear
                 if ( get_turn_info_for_endpoint<true, true>
                         ::apply(range_p, range_q,
                                 tp_model, inters, method_equal, out,
-                                umbrella_strategy.get_point_in_point_strategy()) )
+                                strategy.get_point_in_point_strategy()) )
                 {
                     // do nothing
                 }
@@ -292,8 +288,7 @@ struct get_turn_info_linear_linear
                         // Both equal
                         // or collinear-and-ending at intersection point
                         equal<TurnInfo>::apply(range_p, range_q, tp,
-                            inters.i_info(), inters.d_info(), inters.sides(),
-                            umbrella_strategy);
+                            inters.i_info(), inters.d_info(), inters.sides());
 
                         operation_type spike_op
                             = ( tp.operations[0].operation != operation_continue
@@ -333,7 +328,7 @@ struct get_turn_info_linear_linear
                 if ( get_turn_info_for_endpoint<true, true>
                         ::apply(range_p, range_q,
                                 tp_model, inters,  method_collinear, out,
-                                umbrella_strategy.get_point_in_point_strategy()) )
+                                strategy.get_point_in_point_strategy()) )
                 {
                     // do nothing
                 }
@@ -352,8 +347,7 @@ struct get_turn_info_linear_linear
                         {
                             // Collinear, but similar thus handled as equal
                             equal<TurnInfo>::apply(range_p, range_q, tp,
-                                inters.i_info(), inters.d_info(), inters.sides(),
-                                umbrella_strategy);
+                                inters.i_info(), inters.d_info(), inters.sides());
 
                             method_replace = method_touch;
                             if ( tp.operations[0].operation != operation_continue
@@ -416,7 +410,7 @@ struct get_turn_info_linear_linear
                 // degenerate points
                 if ( BOOST_GEOMETRY_CONDITION(AssignPolicy::include_degenerate) )
                 {
-                    typedef typename UmbrellaStrategy::point_in_point_strategy_type
+                    typedef typename IntersectionStrategy::point_in_point_strategy_type
                         equals_strategy_type;
 
                     only_convert::apply(tp, inters.i_info());

@@ -10,12 +10,19 @@
 
 #include <iosfwd>
 
+#if defined(BOOST_MSVC)
+# pragma warning(push)
+# pragma warning(disable: 4522) // multiple assignment operators specified warning
+#endif
+
 ///////////////////////////////////////////////////////////////////////////////
 namespace boost { namespace spirit { namespace x3
 {
     struct unused_type
     {
-        unused_type() = default;
+        unused_type()
+        {
+        }
 
         template <typename T>
         unused_type(T const&)
@@ -32,6 +39,18 @@ namespace boost { namespace spirit { namespace x3
         template <typename T>
         unused_type&
         operator=(T const&)
+        {
+            return *this;
+        }
+
+        unused_type const&
+        operator=(unused_type const&) const
+        {
+            return *this;
+        }
+
+        unused_type&
+        operator=(unused_type const&)
         {
             return *this;
         }
@@ -57,5 +76,9 @@ namespace boost { namespace spirit { namespace x3
         return in;
     }
 }}}
+
+#if defined(BOOST_MSVC)
+# pragma warning(pop)
+#endif
 
 #endif

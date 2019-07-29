@@ -40,6 +40,7 @@
 #include <boost/beast/zlib/error.hpp>
 #include <boost/beast/zlib/zlib.hpp>
 #include <boost/beast/zlib/detail/ranges.hpp>
+#include <boost/beast/core/detail/type_traits.hpp>
 #include <boost/assert.hpp>
 #include <boost/config.hpp>
 #include <boost/optional.hpp>

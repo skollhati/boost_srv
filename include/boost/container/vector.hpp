@@ -501,9 +501,6 @@ struct vector_alloc_holder
    BOOST_CONTAINER_FORCEINLINE void capacity(const size_type &c)  BOOST_NOEXCEPT_OR_NOTHROW
       {  BOOST_ASSERT( c <= stored_size_type(-1)); m_capacity = c;  }
 
-   static BOOST_CONTAINER_FORCEINLINE void on_capacity_overflow()
-   { }
-
    private:
    void priv_first_allocation(size_type cap)
    {
@@ -634,13 +631,10 @@ struct vector_alloc_holder<Allocator, StoredSizeType, version_0>
          (this->alloc(), boost::movelib::to_raw_pointer(holder.start()), n, boost::movelib::to_raw_pointer(this->start()));
    }
 
-   static BOOST_CONTAINER_FORCEINLINE void on_capacity_overflow()
-   {  allocator_type::on_capacity_overflow();  }
-
    BOOST_CONTAINER_FORCEINLINE void priv_first_allocation(size_type cap)
    {
       if(cap > allocator_type::internal_capacity){
-         on_capacity_overflow();
+         throw_bad_alloc();
       }
    }
 
@@ -654,20 +648,20 @@ struct vector_alloc_holder<Allocator, StoredSizeType, version_0>
    {
       typedef typename real_allocator<value_type, OtherAllocator>::type other_allocator_type;
       if(this->m_size > other_allocator_type::internal_capacity || x.m_size > allocator_type::internal_capacity){
-         on_capacity_overflow();
+         throw_bad_alloc();
       }
       this->priv_deep_swap(x);
    }
 
    BOOST_CONTAINER_FORCEINLINE void swap_resources(vector_alloc_holder &) BOOST_NOEXCEPT_OR_NOTHROW
    {  //Containers with version 0 allocators can't be moved without moving elements one by one
-      on_capacity_overflow();
+      throw_bad_alloc();
    }
 
 
    BOOST_CONTAINER_FORCEINLINE void steal_resources(vector_alloc_holder &)
    {  //Containers with version 0 allocators can't be moved without moving elements one by one
-      on_capacity_overflow();
+      throw_bad_alloc();
    }
 
    BOOST_CONTAINER_FORCEINLINE allocator_type &alloc() BOOST_NOEXCEPT_OR_NOTHROW
@@ -708,6 +702,18 @@ struct vector_alloc_holder<Allocator, StoredSizeType, version_0>
 
 struct growth_factor_60;
 
+template<class T, class Default>
+struct default_if_void
+{
+   typedef T type;
+};
+
+template<class Default>
+struct default_if_void<void, Default>
+{
+   typedef Default type;
+};
+
 template<class Options, class AllocatorSizeType>
 struct get_vector_opt
 {
@@ -721,6 +727,7 @@ struct get_vector_opt<void, AllocatorSizeType>
 {
    typedef vector_opt<growth_factor_60, AllocatorSizeType> type;
 };
+
 
 #endif   //#ifndef BOOST_CONTAINER_DOXYGEN_INVOKED
 
@@ -2333,7 +2340,7 @@ private:
    template<class FwdIt, class Compare>
    BOOST_CONTAINER_FORCEINLINE void priv_merge_in_new_buffer(FwdIt, size_type, Compare, version_0)
    {
-      alloc_holder_t::on_capacity_overflow();
+      throw_bad_alloc();
    }
 
    template<class FwdIt, class Compare, class Version>
@@ -2413,7 +2420,7 @@ private:
    {
       if(!dtl::is_same<typename real_allocator<T, OtherA>::type, allocator_type>::value &&
           this->capacity() < x.size()){
-         alloc_holder_t::on_capacity_overflow();
+         throw_bad_alloc();
       }
       T* const this_start  = this->priv_raw_begin();
       T* const other_start = x.priv_raw_begin();
@@ -2465,7 +2472,7 @@ private:
    {
       if(!dtl::is_same<typename real_allocator<T, OtherA>::type, allocator_type>::value &&
          this->capacity() < x.size()){
-         alloc_holder_t::on_capacity_overflow();
+         throw_bad_alloc();
       }
       T* const this_start  = this->priv_raw_begin();
       T* const other_start = x.priv_raw_begin();
@@ -2534,7 +2541,7 @@ private:
    }
 
    void priv_reserve_no_capacity(size_type, version_0)
-   {  alloc_holder_t::on_capacity_overflow();  }
+   {  throw_bad_alloc();  }
 
    dtl::insert_range_proxy<allocator_type, boost::move_iterator<T*>, T*> priv_dummy_empty_proxy()
    {
@@ -2633,10 +2640,10 @@ private:
          ( vector_iterator_get_ptr(p), 1, dtl::get_insert_value_proxy<T*, allocator_type>(::boost::forward<U>(x)));
    }
 
-   BOOST_CONTAINER_FORCEINLINE dtl::insert_copy_proxy<allocator_type, T*> priv_single_insert_proxy(const T &x)
+   dtl::insert_copy_proxy<allocator_type, T*> priv_single_insert_proxy(const T &x)
    {  return dtl::insert_copy_proxy<allocator_type, T*> (x);  }
 
-   BOOST_CONTAINER_FORCEINLINE dtl::insert_move_proxy<allocator_type, T*> priv_single_insert_proxy(BOOST_RV_REF(T) x)
+   dtl::insert_move_proxy<allocator_type, T*> priv_single_insert_proxy(BOOST_RV_REF(T) x)
    {  return dtl::insert_move_proxy<allocator_type, T*> (x);  }
 
    template <class U>
@@ -2737,7 +2744,7 @@ private:
    iterator priv_forward_range_insert_no_capacity
       (const pointer &pos, const size_type, const InsertionProxy , version_0)
    {
-      alloc_holder_t::on_capacity_overflow();
+      throw_bad_alloc();
       return iterator(pos);
    }
 
@@ -2837,7 +2844,7 @@ private:
 
       if (n > remaining){
          //This will trigger an error
-         alloc_holder_t::on_capacity_overflow();
+         throw_bad_alloc();
       }
       this->priv_forward_range_insert_at_end_expand_forward(n, insert_range_proxy);
       return this->end();
@@ -3413,9 +3420,9 @@ namespace boost {
 template <class T, class Allocator, class Options>
 struct has_trivial_destructor_after_move<boost::container::vector<T, Allocator, Options> >
 {
-   typedef typename boost::container::vector<T, Allocator, Options>::allocator_type allocator_type;
-   typedef typename ::boost::container::allocator_traits<allocator_type>::pointer pointer;
-   static const bool value = ::boost::has_trivial_destructor_after_move<allocator_type>::value &&
+   typedef typename ::boost::container::allocator_traits
+      <typename boost::container::real_allocator<T, Allocator>::type>::pointer pointer;
+   static const bool value = ::boost::has_trivial_destructor_after_move<Allocator>::value &&
                              ::boost::has_trivial_destructor_after_move<pointer>::value;
 };
 

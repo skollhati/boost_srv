@@ -61,7 +61,6 @@ struct end_query_iterator
 template <typename Value, typename Options, typename Translator, typename Box, typename Allocators, typename Predicates>
 class spatial_query_iterator
 {
-    typedef typename Options::parameters_type parameters_type;
     typedef visitors::spatial_query_incremental<Value, Options, Translator, Box, Allocators, Predicates> visitor_type;
     typedef typename visitor_type::node_pointer node_pointer;
 
@@ -75,12 +74,12 @@ public:
     inline spatial_query_iterator()
     {}
 
-    inline spatial_query_iterator(parameters_type const& par, Translator const& t, Predicates const& p)
-        : m_visitor(par, t, p)
+    inline spatial_query_iterator(Translator const& t, Predicates const& p)
+        : m_visitor(t, p)
     {}
 
-    inline spatial_query_iterator(node_pointer root, parameters_type const& par, Translator const& t, Predicates const& p)
-        : m_visitor(par, t, p)
+    inline spatial_query_iterator(node_pointer root, Translator const& t, Predicates const& p)
+        : m_visitor(t, p)
     {
         m_visitor.initialize(root);
     }
@@ -130,7 +129,6 @@ private:
 template <typename Value, typename Options, typename Translator, typename Box, typename Allocators, typename Predicates, unsigned NearestPredicateIndex>
 class distance_query_iterator
 {
-    typedef typename Options::parameters_type parameters_type;
     typedef visitors::distance_query_incremental<Value, Options, Translator, Box, Allocators, Predicates, NearestPredicateIndex> visitor_type;
     typedef typename visitor_type::node_pointer node_pointer;
 
@@ -144,12 +142,12 @@ public:
     inline distance_query_iterator()
     {}
 
-    inline distance_query_iterator(parameters_type const& par, Translator const& t, Predicates const& p)
-        : m_visitor(par, t, p)
+    inline distance_query_iterator(Translator const& t, Predicates const& p)
+        : m_visitor(t, p)
     {}
 
-    inline distance_query_iterator(node_pointer root, parameters_type const& par, Translator const& t, Predicates const& p)
-        : m_visitor(par, t, p)
+    inline distance_query_iterator(node_pointer root, Translator const& t, Predicates const& p)
+        : m_visitor(t, p)
     {
         m_visitor.initialize(root);
     }

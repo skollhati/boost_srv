@@ -154,12 +154,8 @@ find_eol(
 
 bool
 basic_parser_base::
-parse_dec(
-    string_view s,
-    std::uint64_t& v)
+parse_dec(char const* it, char const* last, std::uint64_t& v)
 {
-    char const* it = s.data();
-    char const* last = it + s.size();
     if(it == last)
         return false;
     std::uint64_t tmp = 0;
@@ -495,7 +491,7 @@ parse_field(
     char const* last,
     string_view& name,
     string_view& value,
-    beast::detail::char_buffer<max_obs_fold>& buf,
+    static_string<max_obs_fold>& buf,
     error_code& ec)
 {
 /*  header-field    = field-name ":" OWS field-value OWS
@@ -611,60 +607,63 @@ parse_field(
         if(token_last != first)
             break;
     }
-    buf.clear();
-    if (!buf.try_append(first, token_last))
-    {
-        ec = error::header_limit;
-        return;
-    }
-
+    buf.resize(0);
+    buf.append(first, token_last);
     BOOST_ASSERT(! buf.empty());
-    for(;;)
+#ifndef BOOST_NO_EXCEPTIONS
+    try
+#endif
     {
-        // eat leading ' ' and '\t'
-        for(;;++p)
+        for(;;)
         {
+            // eat leading ' ' and '\t'
+            for(;;++p)
+            {
+                if(p + 1 > last)
+                {
+                    ec = error::need_more;
+                    return;
+                }
+                if(! (*p == ' ' || *p == '\t'))
+                    break;
+            }
+            // parse to CRLF
+            first = p;
+            p = parse_token_to_eol(p, last, token_last, ec);
+            if(ec)
+                return;
+            if(! p)
+            {
+                ec = error::bad_value;
+                return;
+            }
+            // Look 1 char past the CRLF to handle obs-fold.
             if(p + 1 > last)
             {
                 ec = error::need_more;
                 return;
             }
-            if(! (*p == ' ' || *p == '\t'))
-                break;
-        }
-        // parse to CRLF
-        first = p;
-        p = parse_token_to_eol(p, last, token_last, ec);
-        if(ec)
-            return;
-        if(! p)
-        {
-            ec = error::bad_value;
-            return;
-        }
-        // Look 1 char past the CRLF to handle obs-fold.
-        if(p + 1 > last)
-        {
-            ec = error::need_more;
-            return;
-        }
-        token_last = trim_back(token_last, first);
-        if(first != token_last)
-        {
-            if (!buf.try_push_back(' ') ||
-                !buf.try_append(first, token_last))
+            token_last = trim_back(token_last, first);
+            if(first != token_last)
             {
-                ec = error::header_limit;
+                buf.push_back(' ');
+                buf.append(first, token_last);
+            }
+            if(*p != ' ' && *p != '\t')
+            {
+                value = {buf.data(), buf.size()};
                 return;
             }
+            ++p;
         }
-        if(*p != ' ' && *p != '\t')
-        {
-            value = {buf.data(), buf.size()};
-            return;
-        }
-        ++p;
     }
+#ifndef BOOST_NO_EXCEPTIONS
+    catch(std::length_error const&)
+    {
+        ec = error::header_limit;
+        return;
+    }
+#endif
 }
 
 

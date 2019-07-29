@@ -69,8 +69,9 @@ namespace boost { namespace spirit { namespace qi { namespace detail
         Iterator const& last;
         std::streamsize pos;
 
+    private:
         // silence MSVC warning C4512: assignment operator could not be generated
-        BOOST_DELETED_FUNCTION(base_iterator_source& operator= (base_iterator_source const&))
+        base_iterator_source& operator= (base_iterator_source const&);
     };
 
     template <typename Iterator, typename Enable = void>

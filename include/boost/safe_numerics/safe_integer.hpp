@@ -10,7 +10,6 @@
 // not actually used here - but needed for integer arithmetic
 // so this is a good place to include it
 #include "checked_integer.hpp"
-#include "checked_result_operations.hpp"
 
 #include "safe_base.hpp"
 #include "safe_base_operations.hpp"

@@ -62,12 +62,8 @@ parse_until(
         // caller to distinguish an SSL short read which
         // represents a safe connection closure, versus
         // a closure with data loss.
-        if( ec != net::error::operation_aborted &&
-            parser.got_some() && ! parser.is_done())
-        {
+        if(parser.got_some() && ! parser.is_done())
             ec = error::partial_message;
-        }
-
         return 0;
     }
     if(parser.is_done())
@@ -164,7 +160,7 @@ template<
 class read_msg_op
     : public beast::stable_async_base<
         Handler, beast::executor_type<Stream>>
-    , public asio::coroutine
+    , public net::coroutine
 {
     using parser_type =
         parser<isRequest, Body, Allocator>;

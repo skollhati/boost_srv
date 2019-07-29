@@ -32,7 +32,6 @@
 #endif
 
 #include <boost/math/special_functions/sign.hpp>
-#include <boost/math/special_functions/next.hpp>
 #include <boost/math/tools/toms748_solve.hpp>
 #include <boost/math/policies/error_handling.hpp>
 
@@ -246,11 +245,6 @@ T newton_raphson_iterate(F f, T guess, T min, T max, int digits, boost::uintmax_
 
    boost::uintmax_t count(max_iter);
 
-#ifdef BOOST_MATH_INSTRUMENT
-	 std::cout << "Newton_raphson_iterate, guess = " << guess << ", min = " << min << ", max = " << max 
-		 << ", digits = " << digits << ", max_iter = " << max_iter << std::endl;
-#endif
-
    do{
       last_f0 = f0;
       delta2 = delta1;
@@ -263,7 +257,7 @@ T newton_raphson_iterate(F f, T guess, T min, T max, int digits, boost::uintmax_
       {
          // Oops zero derivative!!!
 #ifdef BOOST_MATH_INSTRUMENT
-         std::cout << "Newton iteration, zero derivative found!" << std::endl;
+         std::cout << "Newton iteration, zero derivative found" << std::endl;
 #endif
          detail::handle_zero_derivative(f, last_f0, f0, delta, result, guess, min, max);
       }
@@ -272,16 +266,15 @@ T newton_raphson_iterate(F f, T guess, T min, T max, int digits, boost::uintmax_
          delta = f0 / f1;
       }
 #ifdef BOOST_MATH_INSTRUMENT
-      std::cout << "Newton iteration " << max_iter - count << ", delta = " << delta << std::endl;
+      std::cout << "Newton iteration, delta = " << delta << std::endl;
 #endif
       if(fabs(delta * 2) > fabs(delta2))
       {
-         // Last two steps haven't converged.
+         // last two steps haven't converged.
          T shift = (delta > 0) ? (result - min) / 2 : (result - max) / 2;
          if ((result != 0) && (fabs(shift) > fabs(result)))
          {
-            delta = sign(delta) * fabs(result) * 0.9; // Protect against huge jumps!
-            //delta = sign(delta) * result; // Protect against huge jumps! Failed for negative result. https://github.com/boostorg/math/issues/216
+            delta = sign(delta) * result; // protect against huge jumps!
          }
          else
             delta = shift;
@@ -305,7 +298,7 @@ T newton_raphson_iterate(F f, T guess, T min, T max, int digits, boost::uintmax_
          if((result == min) || (result == max))
             break;
       }
-      // Update brackets:
+      // update brackets:
       if(delta > 0)
          max = guess;
       else
@@ -315,14 +308,13 @@ T newton_raphson_iterate(F f, T guess, T min, T max, int digits, boost::uintmax_
    max_iter -= count;
 
 #ifdef BOOST_MATH_INSTRUMENT
-   std::cout << "Newton Raphson final iteration count = " << max_iter << std::endl;
+   std::cout << "Newton Raphson iteration, final count = " << max_iter << std::endl;
 
    static boost::uintmax_t max_count = 0;
    if(max_iter > max_count)
    {
       max_count = max_iter;
-      // std::cout << "Maximum iterations: " << max_iter << std::endl;
-	    // Puzzled what this tells us, so commented out for now?
+      std::cout << "Maximum iterations: " << max_iter << std::endl;
    }
 #endif
 
@@ -362,131 +354,12 @@ namespace detail{
       }
    };
 
-   template <class F, class T>
-   T bracket_root_towards_min(F f, T guess, const T& f0, T& min, T& max, boost::uintmax_t& count);
-
-   template <class F, class T>
-   T bracket_root_towards_max(F f, T guess, const T& f0, T& min, T& max, boost::uintmax_t& count)
-   {
-      using std::fabs;
-      //
-      // Move guess towards max until we bracket the root, updating min and max as we go:
-      //
-      T guess0 = guess;
-      T multiplier = 2;
-      T f_current = f0;
-      if (fabs(min) < fabs(max))
-      {
-         while (--count && ((f_current < 0) == (f0 < 0)))
-         {
-            min = guess;
-            guess *= multiplier;
-            if (guess > max)
-            {
-               guess = max;
-               f_current = -f_current;  // There must be a change of sign!
-               break;
-            }
-            multiplier *= 2;
-            unpack_0(f(guess), f_current);
-         }
-      }
-      else
-      {
-         //
-         // If min and max are negative we have to divide to head towards max:
-         //
-         while (--count && ((f_current < 0) == (f0 < 0)))
-         {
-            min = guess;
-            guess /= multiplier;
-            if (guess > max)
-            {
-               guess = max;
-               f_current = -f_current;  // There must be a change of sign!
-               break;
-            }
-            multiplier *= 2;
-            unpack_0(f(guess), f_current);
-         }
-      }
-
-      if (count)
-      {
-         max = guess;
-         if (multiplier > 16)
-            return (guess0 - guess) + bracket_root_towards_min(f, guess, f_current, min, max, count);
-      }
-      return guess0 - (max + min) / 2;
-   }
-
-   template <class F, class T>
-   T bracket_root_towards_min(F f, T guess, const T& f0, T& min, T& max, boost::uintmax_t& count)
-   {
-      using std::fabs;
-      //
-      // Move guess towards min until we bracket the root, updating min and max as we go:
-      //
-      T guess0 = guess;
-      T multiplier = 2;
-      T f_current = f0;
-
-      if (fabs(min) < fabs(max))
-      {
-         while (--count && ((f_current < 0) == (f0 < 0)))
-         {
-            max = guess;
-            guess /= multiplier;
-            if (guess < min)
-            {
-               guess = min;
-               f_current = -f_current;  // There must be a change of sign!
-               break;
-            }
-            multiplier *= 2;
-            unpack_0(f(guess), f_current);
-         }
-      }
-      else
-      {
-         //
-         // If min and max are negative we have to multiply to head towards min:
-         //
-         while (--count && ((f_current < 0) == (f0 < 0)))
-         {
-            max = guess;
-            guess *= multiplier;
-            if (guess < min)
-            {
-               guess = min;
-               f_current = -f_current;  // There must be a change of sign!
-               break;
-            }
-            multiplier *= 2;
-            unpack_0(f(guess), f_current);
-         }
-      }
-
-      if (count)
-      {
-         min = guess;
-         if (multiplier > 16)
-            return (guess0 - guess) + bracket_root_towards_max(f, guess, f_current, min, max, count);
-      }
-      return guess0 - (max + min) / 2;
-   }
-
    template <class Stepper, class F, class T>
    T second_order_root_finder(F f, T guess, T min, T max, int digits, boost::uintmax_t& max_iter) BOOST_NOEXCEPT_IF(BOOST_MATH_IS_FLOAT(T) && noexcept(std::declval<F>()(std::declval<T>())))
    {
       BOOST_MATH_STD_USING
 
-#ifdef BOOST_MATH_INSTRUMENT
-				std::cout << "Second order root iteration, guess = " << guess << ", min = " << min << ", max = " << max
-				<< ", digits = " << digits << ", max_iter = " << max_iter << std::endl;
-#endif
-
-      T f0(0), f1, f2;
+         T f0(0), f1, f2;
       T result = guess;
 
       T factor = ldexp(static_cast<T>(1.0), 1 - digits);
@@ -519,7 +392,7 @@ namespace detail{
          {
             // Oops zero derivative!!!
 #ifdef BOOST_MATH_INSTRUMENT
-            std::cout << "Second order root iteration, zero derivative found!" << std::endl;
+            std::cout << "Second order root iteration, zero derivative found" << std::endl;
 #endif
             detail::handle_zero_derivative(f, last_f0, f0, delta, result, guess, min, max);
          }
@@ -556,7 +429,7 @@ namespace detail{
             // last two steps haven't converged.
             delta = (delta > 0) ? (result - min) / 2 : (result - max) / 2;
             if ((result != 0) && (fabs(delta) > result))
-               delta = sign(delta) * fabs(result) * 0.9; // protect against huge jumps!
+               delta = sign(delta) * result; // protect against huge jumps!
             // reset delta2 so that this branch will *not* be taken on the
             // next iteration:
             delta2 = delta * 3;
@@ -586,15 +459,10 @@ namespace detail{
             }
             else
             {
-               if (fabs(float_distance(min, max)) < 2)
-               {
-                  result = guess = (min + max) / 2;
-                  break;
-               }
-               delta = bracket_root_towards_min(f, guess, f0, min, max, count);
+               delta = (guess - min) / 2;
                result = guess - delta;
-               guess = min;
-               continue;
+               if((result == min) || (result == max))
+                  break;
             }
          }
          else if(result > max)
@@ -612,15 +480,10 @@ namespace detail{
             }
             else
             {
-               if (fabs(float_distance(min, max)) < 2)
-               {
-                  result = guess = (min + max) / 2;
-                  break;
-               }
-               delta = bracket_root_towards_max(f, guess, f0, min, max, count);
+               delta = (guess - max) / 2;
                result = guess - delta;
-               guess = min;
-               continue;
+               if((result == min) || (result == max))
+                  break;
             }
          }
          // update brackets:
@@ -633,12 +496,14 @@ namespace detail{
       max_iter -= count;
 
 #ifdef BOOST_MATH_INSTRUMENT
-      std::cout << "Second order root finder, final iteration count = " << max_iter << std::endl;
+      std::cout << "Second order root iteration, final count = " << max_iter << std::endl;
 #endif
 
       return result;
    }
-} // T second_order_root_finder
+
+}
+
 template <class F, class T>
 T halley_iterate(F f, T guess, T min, T max, int digits, boost::uintmax_t& max_iter) BOOST_NOEXCEPT_IF(BOOST_MATH_IS_FLOAT(T) && noexcept(std::declval<F>()(std::declval<T>())))
 {

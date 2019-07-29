@@ -63,11 +63,6 @@ public:
     {
     }
 
-    atomic_shared_ptr( shared_ptr<T> p ) BOOST_SP_NOEXCEPT
-        : p_( std::move( p ) ), l_ BOOST_DETAIL_SPINLOCK_INIT
-    {
-    }
-
 #else
 
     atomic_shared_ptr() BOOST_SP_NOEXCEPT
@@ -75,6 +70,8 @@ public:
         boost::detail::spinlock init = BOOST_DETAIL_SPINLOCK_INIT;
         std::memcpy( &l_, &init, sizeof( init ) );
     }
+
+#endif
 
     atomic_shared_ptr( shared_ptr<T> p ) BOOST_SP_NOEXCEPT
 #if !defined( BOOST_NO_CXX11_RVALUE_REFERENCES )
@@ -86,8 +83,6 @@ public:
         boost::detail::spinlock init = BOOST_DETAIL_SPINLOCK_INIT;
         std::memcpy( &l_, &init, sizeof( init ) );
     }
-
-#endif
 
     atomic_shared_ptr& operator=( shared_ptr<T> r ) BOOST_SP_NOEXCEPT
     {

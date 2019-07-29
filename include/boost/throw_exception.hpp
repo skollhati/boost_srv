@@ -54,7 +54,7 @@ namespace boost
 {
 #ifdef BOOST_NO_EXCEPTIONS
 
-BOOST_NORETURN void throw_exception( std::exception const & e ); // user defined
+void throw_exception( std::exception const & e ); // user defined
 
 #else
 

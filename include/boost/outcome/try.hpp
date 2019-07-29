@@ -1,5 +1,5 @@
 /* Try operation macros
-(C) 2017-2019 Niall Douglas <http://www.nedproductions.biz/> (20 commits)
+(C) 2017-2019 Niall Douglas <http://www.nedproductions.biz/> (59 commits)
 File Created: July 2017
 
 
@@ -33,106 +33,49 @@ DEALINGS IN THE SOFTWARE.
 
 #include "success_failure.hpp"
 
+namespace std  // NOLINT
+{
+  namespace experimental
+  {
+    template <class T, class E> class expected;
+    template <class E> class unexpected;
+  }  // namespace experimental
+}  // namespace std
+
 BOOST_OUTCOME_V2_NAMESPACE_BEGIN
 
-namespace detail
-{
-  struct has_value_overload
-  {
-  };
-  struct as_failure_overload
-  {
-  };
-  struct assume_error_overload
-  {
-  };
-  struct error_overload
-  {
-  };
-  struct assume_value_overload
-  {
-  };
-  struct value_overload
-  {
-  };
-  BOOST_OUTCOME_TEMPLATE(class T, class R = decltype(std::declval<T>().as_failure()))
-  BOOST_OUTCOME_TREQUIRES(BOOST_OUTCOME_TPRED(BOOST_OUTCOME_V2_NAMESPACE::is_failure_type<R>))
-  constexpr inline bool has_as_failure(int/*unused */) { return true; }
-  template<class T> constexpr inline bool has_as_failure(...) { return false; }
-  BOOST_OUTCOME_TEMPLATE(class T)
-  BOOST_OUTCOME_TREQUIRES(BOOST_OUTCOME_TEXPR(std::declval<T>().assume_error()))
-  constexpr inline bool has_assume_error(int/*unused */) { return true; }
-  template<class T> constexpr inline bool has_assume_error(...) { return false; }
-  BOOST_OUTCOME_TEMPLATE(class T)
-  BOOST_OUTCOME_TREQUIRES(BOOST_OUTCOME_TEXPR(std::declval<T>().error()))
-  constexpr inline bool has_error(int/*unused */) { return true; }
-  template<class T> constexpr inline bool has_error(...) { return false; }
-  BOOST_OUTCOME_TEMPLATE(class T)
-  BOOST_OUTCOME_TREQUIRES(BOOST_OUTCOME_TEXPR(std::declval<T>().assume_value()))
-  constexpr inline bool has_assume_value(int/*unused */) { return true; }
-  template<class T> constexpr inline bool has_assume_value(...) { return false; }
-  BOOST_OUTCOME_TEMPLATE(class T)
-  BOOST_OUTCOME_TREQUIRES(BOOST_OUTCOME_TEXPR(std::declval<T>().value()))
-  constexpr inline bool has_value(int/*unused */) { return true; }
-  template<class T> constexpr inline bool has_value(...) { return false; }
-}  // namespace detail
-
-/*! AWAITING HUGO JSON CONVERSION TOOL
+/*! AWAITING HUGO JSON CONVERSION TOOL 
 SIGNATURE NOT RECOGNISED
 */
 BOOST_OUTCOME_TEMPLATE(class T)
-BOOST_OUTCOME_TREQUIRES(BOOST_OUTCOME_TEXPR(std::declval<T>().has_value()))
-constexpr inline bool try_operation_has_value(T &&v, detail::has_value_overload = {})
-{
-  return v.has_value();
-}
-
-/*! AWAITING HUGO JSON CONVERSION TOOL
-SIGNATURE NOT RECOGNISED
-*/
-BOOST_OUTCOME_TEMPLATE(class T)
-BOOST_OUTCOME_TREQUIRES(BOOST_OUTCOME_TPRED(detail::has_as_failure<T>(5)))
-constexpr inline decltype(auto) try_operation_return_as(T &&v, detail::as_failure_overload = {})
+BOOST_OUTCOME_TREQUIRES(BOOST_OUTCOME_TEXPR(std::declval<T>().as_failure()))
+inline decltype(auto) try_operation_return_as(T &&v)
 {
   return static_cast<T &&>(v).as_failure();
 }
-/*! AWAITING HUGO JSON CONVERSION TOOL
+/*! AWAITING HUGO JSON CONVERSION TOOL 
 SIGNATURE NOT RECOGNISED
 */
-BOOST_OUTCOME_TEMPLATE(class T)
-BOOST_OUTCOME_TREQUIRES(BOOST_OUTCOME_TPRED(!detail::has_as_failure<T>(5) && detail::has_assume_error<T>(5)))
-constexpr inline decltype(auto) try_operation_return_as(T &&v, detail::assume_error_overload = {})
+template <class T, class E> inline auto try_operation_return_as(const std::experimental::expected<T, E> &v)
 {
-  return failure(static_cast<T &&>(v).assume_error());
+  return std::experimental::unexpected<E>(v.error());
 }
-/*! AWAITING HUGO JSON CONVERSION TOOL
+/*! AWAITING HUGO JSON CONVERSION TOOL 
 SIGNATURE NOT RECOGNISED
 */
-BOOST_OUTCOME_TEMPLATE(class T)
-BOOST_OUTCOME_TREQUIRES(BOOST_OUTCOME_TPRED(!detail::has_as_failure<T>(5) && !detail::has_assume_error<T>(5) && detail::has_error<T>(5)))
-constexpr inline decltype(auto) try_operation_return_as(T &&v, detail::error_overload = {})
+template <class T, class E> inline auto try_operation_return_as(std::experimental::expected<T, E> &&v)
 {
-  return failure(static_cast<T &&>(v).error());
+  return std::experimental::unexpected<E>(static_cast<std::experimental::expected<T, E> &&>(v).error());
 }
 
-/*! AWAITING HUGO JSON CONVERSION TOOL
-SIGNATURE NOT RECOGNISED
-*/
-BOOST_OUTCOME_TEMPLATE(class T)
-BOOST_OUTCOME_TREQUIRES(BOOST_OUTCOME_TPRED(detail::has_assume_value<T>(5)))
-constexpr inline decltype(auto) try_operation_extract_value(T &&v, detail::assume_value_overload = {})
+namespace detail
 {
-  return static_cast<T &&>(v).assume_value();
-}
-/*! AWAITING HUGO JSON CONVERSION TOOL
-SIGNATURE NOT RECOGNISED
-*/
-BOOST_OUTCOME_TEMPLATE(class T)
-BOOST_OUTCOME_TREQUIRES(BOOST_OUTCOME_TPRED(!detail::has_assume_value<T>(5) && detail::has_value<T>(5)))
-constexpr inline decltype(auto) try_operation_extract_value(T &&v, detail::value_overload = {})
-{
-  return static_cast<T &&>(v).value();
-}
+  BOOST_OUTCOME_TEMPLATE(class T)
+  BOOST_OUTCOME_TREQUIRES(BOOST_OUTCOME_TEXPR(std::declval<T>().assume_value()))
+  inline decltype(auto) try_extract_value(T &&v) { return static_cast<T &&>(v).assume_value(); }
+
+  template <class T, class... Args> inline decltype(auto) try_extract_value(T &&v, Args &&... /*unused*/) { return static_cast<T &&>(v).value(); }
+}  // namespace detail
 
 BOOST_OUTCOME_V2_NAMESPACE_END
 
@@ -156,36 +99,37 @@ BOOST_OUTCOME_V2_NAMESPACE_END
 
 #define BOOST_OUTCOME_TRYV2(unique, ...)                                                                                                                                                                                                                                                                                             \
   auto && (unique) = (__VA_ARGS__);                                                                                                                                                                                                                                                                                            \
-  if(!BOOST_OUTCOME_V2_NAMESPACE::try_operation_has_value(unique))                                                                                                                                                                                                                                                                   \
+  if(!(unique).has_value())                                                                                                                                                                                                                                                                                                    \
   return BOOST_OUTCOME_V2_NAMESPACE::try_operation_return_as(static_cast<decltype(unique) &&>(unique))
 #define BOOST_OUTCOME_TRY2(unique, v, ...)                                                                                                                                                                                                                                                                                           \
   BOOST_OUTCOME_TRYV2(unique, __VA_ARGS__);                                                                                                                                                                                                                                                                                          \
-  auto && (v) = BOOST_OUTCOME_V2_NAMESPACE::try_operation_extract_value(static_cast<decltype(unique) &&>(unique))
+  auto && (v) = BOOST_OUTCOME_V2_NAMESPACE::detail::try_extract_value(static_cast<decltype(unique) &&>(unique))
 
 #if !defined(__clang__) && defined(__GNUC__) && __GNUC__ >= 8
 #pragma GCC diagnostic pop
 #endif
 
-/*! AWAITING HUGO JSON CONVERSION TOOL
+/*! AWAITING HUGO JSON CONVERSION TOOL 
 SIGNATURE NOT RECOGNISED
 */
 #define BOOST_OUTCOME_TRYV(...) BOOST_OUTCOME_TRYV2(BOOST_OUTCOME_TRY_UNIQUE_NAME, __VA_ARGS__)
 
 #if defined(__GNUC__) || defined(__clang__)
 
-/*! AWAITING HUGO JSON CONVERSION TOOL
+/*! AWAITING HUGO JSON CONVERSION TOOL 
 SIGNATURE NOT RECOGNISED
 */
 #define BOOST_OUTCOME_TRYX(...)                                                                                                                                                                                                                                                                                                      \
   ({                                                                                                                                                                                                                                                                                                                           \
     auto &&res = (__VA_ARGS__);                                                                                                                                                                                                                                                                                                \
-    if(!BOOST_OUTCOME_V2_NAMESPACE::try_operation_has_value(res))                                                                                                                                                                                                                                                                    \
+    if(!res.has_value())                                                                                                                                                                                                                                                                                                       \
       return BOOST_OUTCOME_V2_NAMESPACE::try_operation_return_as(static_cast<decltype(res) &&>(res));                                                                                                                                                                                                                                \
-    BOOST_OUTCOME_V2_NAMESPACE::try_operation_extract_value(static_cast<decltype(res) &&>(res));                                                                                                                                                                                                                                     \
-  })
+    BOOST_OUTCOME_V2_NAMESPACE::detail::try_extract_value(static_cast<decltype(res) &&>(res));                                                                                                                                                                                                                                       \
+  \
+})
 #endif
 
-/*! AWAITING HUGO JSON CONVERSION TOOL
+/*! AWAITING HUGO JSON CONVERSION TOOL 
 SIGNATURE NOT RECOGNISED
 */
 #define BOOST_OUTCOME_TRYA(v, ...) BOOST_OUTCOME_TRY2(BOOST_OUTCOME_TRY_UNIQUE_NAME, v, __VA_ARGS__)
@@ -198,7 +142,7 @@ SIGNATURE NOT RECOGNISED
 #define BOOST_OUTCOME_TRY_INVOKE_TRY3(a, b, c) BOOST_OUTCOME_TRYA(a, b, c)
 #define BOOST_OUTCOME_TRY_INVOKE_TRY2(a, b) BOOST_OUTCOME_TRYA(a, b)
 #define BOOST_OUTCOME_TRY_INVOKE_TRY1(a) BOOST_OUTCOME_TRYV(a)
-/*! AWAITING HUGO JSON CONVERSION TOOL
+/*! AWAITING HUGO JSON CONVERSION TOOL 
 SIGNATURE NOT RECOGNISED
 */
 #define BOOST_OUTCOME_TRY(...) BOOST_OUTCOME_TRY_CALL_OVERLOAD(BOOST_OUTCOME_TRY_INVOKE_TRY, __VA_ARGS__)

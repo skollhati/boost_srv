@@ -7,13 +7,25 @@
 #include "boost/iostreams/stream_buffer.hpp"
 #include "boost/asio/streambuf.hpp"
 #include "stdafx.h"
+#include "Boost_logger.h"
 
 
 int main()
 {
-
+	BoostLogger boostLogger;
+	//init();
     std::cout << "Hello World!\n";
-	BOOST_LOG_SEV(boostLogger.lg, trace) << "hi";
+	logging::add_common_attributes();
+
+	using namespace logging::trivial;
+	
+
+	BOOST_LOG_SEV(lg, trace) << "A trace severity message";
+	BOOST_LOG_SEV(lg, debug) << "A debug severity message";
+	BOOST_LOG_SEV(lg, info) << "An informational severity message";
+	BOOST_LOG_SEV(lg, warning) << "A warning severity message";
+	BOOST_LOG_SEV(lg, error) << "An error severity message";
+	BOOST_LOG_SEV(lg, fatal) << "A fatal severity message";
 
 }
 

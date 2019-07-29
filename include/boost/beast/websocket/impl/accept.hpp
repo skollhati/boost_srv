@@ -21,6 +21,7 @@
 #include <boost/beast/core/buffer_traits.hpp>
 #include <boost/beast/core/stream_traits.hpp>
 #include <boost/beast/core/detail/buffer.hpp>
+#include <boost/beast/core/detail/type_traits.hpp>
 #include <boost/beast/version.hpp>
 #include <boost/asio/coroutine.hpp>
 #include <boost/asio/post.hpp>
@@ -79,8 +80,13 @@ build_response(
             decorator_opt(res);
             decorator(res);
             if(! res.count(http::field::server))
-                res.set(http::field::server,
-                    string_view(BOOST_BEAST_VERSION_STRING));
+            {
+                // VFALCO this is weird..
+                BOOST_STATIC_ASSERT(sizeof(
+                    BOOST_BEAST_VERSION_STRING) < 20);
+                static_string<20> s(BOOST_BEAST_VERSION_STRING);
+                res.set(http::field::server, s);
+            }
         };
     auto err =
         [&](error e)
@@ -166,7 +172,7 @@ template<class Handler>
 class stream<NextLayer, deflateSupported>::response_op
     : public beast::stable_async_base<
         Handler, beast::executor_type<stream>>
-    , public asio::coroutine
+    , public net::coroutine
 {
     boost::weak_ptr<impl_type> wp_;
     error_code result_; // must come before res_
@@ -241,7 +247,7 @@ template<class Handler, class Decorator>
 class stream<NextLayer, deflateSupported>::accept_op
     : public beast::stable_async_base<
         Handler, beast::executor_type<stream>>
-    , public asio::coroutine
+    , public net::coroutine
 {
     boost::weak_ptr<impl_type> wp_;
     http::request_parser<http::empty_body>& p_;

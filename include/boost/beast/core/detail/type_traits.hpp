@@ -10,13 +10,35 @@
 #ifndef BOOST_BEAST_DETAIL_TYPE_TRAITS_HPP
 #define BOOST_BEAST_DETAIL_TYPE_TRAITS_HPP
 
+#include <boost/beast/core/error.hpp>
+#include <boost/beast/core/detail/is_invocable.hpp>
+#include <boost/asio/buffer.hpp>
+#include <boost/mp11/function.hpp>
 #include <boost/type_traits/make_void.hpp>
+#include <iterator>
+#include <tuple>
 #include <type_traits>
-#include <new>
+#include <string>
+#include <utility>
 
 namespace boost {
 namespace beast {
 namespace detail {
+
+// variadic min
+template<class T>
+T constexpr min(T t)
+{
+    return t;
+}
+
+template<class T, class...Tn>
+T constexpr min(T t0, T t1, Tn... tn)
+{
+    return (t0 < t1) ?
+        (detail::min)(t0, tn...) :
+        (detail::min)(t1, tn...);
+}
 
 template<class U>
 std::size_t constexpr
@@ -75,6 +97,12 @@ using aligned_union_t =
 
 //------------------------------------------------------------------------------
 
+template<class T>
+void
+accept_rv(T){}
+
+//------------------------------------------------------------------------------
+
 // for span
 template<class T, class E, class = void>
 struct is_contiguous_container: std::false_type {};
@@ -95,18 +123,6 @@ struct is_contiguous_container<T, E, void_t<
         >::value
     >::type>>: std::true_type
 {};
-
-template <class T, class U>
-T launder_cast(U* u)
-{
-#if defined(__cpp_lib_launder) && __cpp_lib_launder >= 201606
-    return std::launder(reinterpret_cast<T>(u));
-#elif defined(BOOST_GCC) && BOOST_GCC_VERSION > 80000
-    return __builtin_launder(reinterpret_cast<T>(u));
-#else
-    return reinterpret_cast<T>(u);
-#endif
-}
 
 } // detail
 } // beast

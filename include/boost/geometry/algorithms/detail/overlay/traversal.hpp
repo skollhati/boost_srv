@@ -282,7 +282,7 @@ public :
     {
         // For uu/ii, only switch sources if indicated
 
-        if (BOOST_GEOMETRY_CONDITION(OverlayType == overlay_buffer))
+        if (OverlayType == overlay_buffer)
         {
             // Buffer does not use source_index (always 0).
             return select_source_generic<&segment_identifier::multi_index>(
@@ -391,8 +391,7 @@ public :
             return true;
         }
 
-        if (BOOST_GEOMETRY_CONDITION(OverlayType == overlay_buffer)
-            && possible[0] && possible[1])
+        if (OverlayType == overlay_buffer && possible[0] && possible[1])
         {
             // Buffers sometimes have multiple overlapping pieces, where remaining
             // distance could lead to the wrong choice. Take the matching operation.
@@ -566,7 +565,7 @@ public :
             result = select_cc_operation(turn, start_turn_index,
                                          selected_op_index);
         }
-        else if (BOOST_GEOMETRY_CONDITION(OverlayType == overlay_dissolve))
+        else if (OverlayType == overlay_dissolve)
         {
             result = select_preferred_operation(turn, turn_index,
                 start_turn_index, selected_op_index);
@@ -637,7 +636,7 @@ public :
             return 0;
         }
 
-        if (BOOST_GEOMETRY_CONDITION(OverlayType != overlay_dissolve)
+        if (OverlayType != overlay_dissolve
             && (op.enriched.count_left != 0 || op.enriched.count_right == 0))
         {
             // Check counts: in some cases interior rings might be generated with
@@ -804,7 +803,8 @@ public :
             {
                 continue;
             }
-            if (cluster_turn.both(target_operation))
+            if (is_self_turn<OverlayType>(cluster_turn)
+                || cluster_turn.both(target_operation))
             {
                 // Not (yet) supported, can be cluster of u/u turns
                 return false;
@@ -898,8 +898,7 @@ public :
                     // Points to different target
                     return false;
                 }
-                if (BOOST_GEOMETRY_CONDITION(OverlayType == overlay_buffer)
-                    && target.turn_index > 0)
+                if (OverlayType == overlay_buffer && target.turn_index > 0)
                 {
                     // Target already assigned, so there are more targets
                     // or more ways to the same target
@@ -1030,8 +1029,7 @@ public :
                 turn_operation_type const& start_op,
                 int start_op_index) const
     {
-        if (BOOST_GEOMETRY_CONDITION(OverlayType != overlay_buffer
-                                     && OverlayType != overlay_dissolve))
+        if (OverlayType != overlay_buffer && OverlayType != overlay_dissolve)
         {
             return;
         }
@@ -1130,25 +1128,22 @@ public :
                      int previous_op_index,
                      signed_size_type previous_turn_index,
                      segment_identifier const& previous_seg_id,
-                     bool is_start, bool has_points)
+                     bool is_start)
     {
         turn_type const& current_turn = m_turns[turn_index];
 
         if (BOOST_GEOMETRY_CONDITION(target_operation == operation_intersection))
         {
-            if (has_points)
-            {
-                bool const back_at_start_cluster
-                        = current_turn.is_clustered()
-                        && m_turns[start_turn_index].cluster_id == current_turn.cluster_id;
+            bool const back_at_start_cluster
+                    = current_turn.is_clustered()
+                    && m_turns[start_turn_index].cluster_id == current_turn.cluster_id;
 
-                if (turn_index == start_turn_index || back_at_start_cluster)
-                {
-                    // Intersection can always be finished if returning
-                    turn_index = start_turn_index;
-                    op_index = start_op_index;
-                    return true;
-                }
+            if (turn_index == start_turn_index || back_at_start_cluster)
+            {
+                // Intersection can always be finished if returning
+                turn_index = start_turn_index;
+                op_index = start_op_index;
+                return true;
             }
 
             if (! current_turn.is_clustered()

@@ -54,21 +54,18 @@ struct buffer_sequence_memfns_check
 {
 };
 
-#if defined(BOOST_ASIO_HAS_DECLTYPE)
-
-template <typename>
-char buffer_sequence_begin_helper(...);
-
-template <typename T>
-char (&buffer_sequence_begin_helper(T* t,
-    typename enable_if<!is_same<
-      decltype(boost::asio::buffer_sequence_begin(*t)),
-        void>::value>::type*))[2];
-
-#else // defined(BOOST_ASIO_HAS_DECLTYPE)
-
 template <typename>
 char (&buffer_sequence_begin_helper(...))[2];
+
+#if defined(BOOST_ASIO_HAS_DECLTYPE)
+
+template <typename T>
+char buffer_sequence_begin_helper(T* t,
+    typename enable_if<!is_same<
+      decltype(boost::asio::buffer_sequence_begin(*t)),
+        void>::value>::type*);
+
+#else // defined(BOOST_ASIO_HAS_DECLTYPE)
 
 template <typename T>
 char buffer_sequence_begin_helper(T* t,
@@ -78,21 +75,18 @@ char buffer_sequence_begin_helper(T* t,
 
 #endif // defined(BOOST_ASIO_HAS_DECLTYPE)
 
-#if defined(BOOST_ASIO_HAS_DECLTYPE)
-
-template <typename>
-char buffer_sequence_end_helper(...);
-
-template <typename T>
-char (&buffer_sequence_end_helper(T* t,
-    typename enable_if<!is_same<
-      decltype(boost::asio::buffer_sequence_end(*t)),
-        void>::value>::type*))[2];
-
-#else // defined(BOOST_ASIO_HAS_DECLTYPE)
-
 template <typename>
 char (&buffer_sequence_end_helper(...))[2];
+
+#if defined(BOOST_ASIO_HAS_DECLTYPE)
+
+template <typename T>
+char buffer_sequence_end_helper(T* t,
+    typename enable_if<!is_same<
+      decltype(boost::asio::buffer_sequence_end(*t)),
+        void>::value>::type*);
+
+#else // defined(BOOST_ASIO_HAS_DECLTYPE)
 
 template <typename T>
 char buffer_sequence_end_helper(T* t,
@@ -221,8 +215,8 @@ char mutable_buffers_type_typedef_helper(
 template <typename T, typename Buffer>
 struct is_buffer_sequence_class
   : integral_constant<bool,
-      sizeof(buffer_sequence_begin_helper<T>(0, 0)) != 1 &&
-      sizeof(buffer_sequence_end_helper<T>(0, 0)) != 1 &&
+      sizeof(buffer_sequence_begin_helper<T>(0)) != 1 &&
+      sizeof(buffer_sequence_end_helper<T>(0)) != 1 &&
       sizeof(buffer_sequence_element_type_helper<T, Buffer>(0, 0)) == 1>
 {
 };

@@ -1,9 +1,8 @@
 // Boost.Geometry (aka GGL, Generic Geometry Library)
 
-// Copyright (c) 2014, 2019, Oracle and/or its affiliates.
+// Copyright (c) 2014, Oracle and/or its affiliates.
 
 // Contributed and/or modified by Menelaos Karavelas, on behalf of Oracle
-// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
 
 // Licensed under the Boost Software License version 1.0.
 // http://www.boost.org/users/license.html
@@ -114,21 +113,19 @@ template <typename MultiPoint, typename Areal, typename Strategy>
 class multipoint_to_areal
 {
 private:
-    template <typename CoveredByStrategy>
     struct not_covered_by_areal
     {
-        not_covered_by_areal(Areal const& areal, CoveredByStrategy const& strategy)
-            : m_areal(areal), m_strategy(strategy)
+        not_covered_by_areal(Areal const& areal)
+            : m_areal(areal)
         {}
 
         template <typename Point>
         inline bool apply(Point const& point) const
         {
-            return !geometry::covered_by(point, m_areal, m_strategy);
+            return !geometry::covered_by(point, m_areal);
         }
 
         Areal const& m_areal;
-        CoveredByStrategy const& m_strategy;
     };
 
 public:
@@ -143,16 +140,11 @@ public:
                                     Areal const& areal,
                                     Strategy const& strategy)
     {
-        typedef not_covered_by_areal
-            <
-                typename Strategy::point_in_geometry_strategy_type
-            > predicate_type;
-        
-        predicate_type predicate(areal, strategy.get_point_in_geometry_strategy());
+        not_covered_by_areal predicate(areal);
 
         if (check_iterator_range
                 <
-                    predicate_type, false
+                    not_covered_by_areal, false
                 >::apply(boost::begin(multipoint),
                          boost::end(multipoint),
                          predicate))

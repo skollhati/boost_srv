@@ -1,7 +1,7 @@
-Python 2: 2.7.16
-Python 2: 2.7.16 amd64
-Python 3: 3.7.4
-Python 3: 3.7.4 amd64
+Python 2: 2.7.15
+Python 2: 2.7.15 amd64
+Python 3: 3.7.2
+Python 3: 3.7.2 amd64
 zlib: 1.2.8
 bzip2: 1.0.6
 

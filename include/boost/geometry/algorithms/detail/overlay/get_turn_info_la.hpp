@@ -44,7 +44,7 @@ struct get_turn_info_linear_areal
         typename UniqueSubRange1,
         typename UniqueSubRange2,
         typename TurnInfo,
-        typename UmbrellaStrategy,
+        typename IntersectionStrategy,
         typename RobustPolicy,
         typename OutputIterator
     >
@@ -52,7 +52,7 @@ struct get_turn_info_linear_areal
                 UniqueSubRange1 const& range_p,
                 UniqueSubRange2 const& range_q,
                 TurnInfo const& tp_model,
-                UmbrellaStrategy const& umbrella_strategy,
+                IntersectionStrategy const& strategy,
                 RobustPolicy const& robust_policy,
                 OutputIterator out)
     {
@@ -60,11 +60,11 @@ struct get_turn_info_linear_areal
             <
                 UniqueSubRange1, UniqueSubRange2,
                 typename TurnInfo::point_type,
-                UmbrellaStrategy,
+                IntersectionStrategy,
                 RobustPolicy
             > inters_info;
 
-        inters_info inters(range_p, range_q, umbrella_strategy, robust_policy);
+        inters_info inters(range_p, range_q, strategy, robust_policy);
 
         char const method = inters.d_info().how;
 
@@ -79,7 +79,7 @@ struct get_turn_info_linear_areal
             case 's' : // starts from the middle
                 get_turn_info_for_endpoint<true, true>(range_p, range_q,
                     tp_model, inters, method_none, out,
-                    umbrella_strategy.get_point_in_point_strategy());
+                    strategy.get_point_in_point_strategy());
                 break;
 
             case 'd' : // disjoint: never do anything
@@ -89,27 +89,30 @@ struct get_turn_info_linear_areal
             {
                 if ( get_turn_info_for_endpoint<false, true>(range_p, range_q,
                         tp_model, inters, method_touch_interior, out,
-                        umbrella_strategy.get_point_in_point_strategy()) )
+                        strategy.get_point_in_point_strategy()) )
                 {
                     // do nothing
                 }
                 else
                 {
-                    typedef touch_interior<TurnInfo> handler;
+                    typedef touch_interior
+                        <
+                            TurnInfo
+                        > policy;
 
                     // If Q (1) arrives (1)
                     if ( inters.d_info().arrival[1] == 1 )
                     {
-                        handler::template apply<0>(range_p, range_q, tp,
+                        policy::template apply<0>(range_p, range_q, tp,
                                     inters.i_info(), inters.d_info(),
-                                    inters.sides(), umbrella_strategy);
+                                    inters.sides());
                     }
                     else
                     {
                         // Swap p/q
-                        handler::template apply<1>(range_q, range_p,
+                        policy::template apply<1>(range_q, range_p,
                                     tp, inters.i_info(), inters.d_info(),
-                                    inters.get_swapped_sides(), umbrella_strategy);
+                                    inters.get_swapped_sides());
                     }
 
                     if ( tp.operations[1].operation == operation_blocked )
@@ -124,7 +127,7 @@ struct get_turn_info_linear_areal
                     // this function assumes that 'u' must be set for a spike
                     calculate_spike_operation(tp.operations[0].operation,
                                               inters,
-                                              umbrella_strategy.get_point_in_point_strategy());
+                                              strategy.get_point_in_point_strategy());
                     
                     *out++ = tp;
                 }
@@ -144,15 +147,14 @@ struct get_turn_info_linear_areal
                 // Both touch (both arrive there)
                 if ( get_turn_info_for_endpoint<false, true>(range_p, range_q,
                         tp_model, inters, method_touch, out,
-                        umbrella_strategy.get_point_in_point_strategy()) )
+                        strategy.get_point_in_point_strategy()) )
                 {
                     // do nothing
                 }
                 else 
                 {
                     touch<TurnInfo>::apply(range_p, range_q, tp,
-                        inters.i_info(), inters.d_info(), inters.sides(),
-                        umbrella_strategy);
+                        inters.i_info(), inters.d_info(), inters.sides());
 
                     if ( tp.operations[1].operation == operation_blocked )
                     {
@@ -218,7 +220,7 @@ struct get_turn_info_linear_areal
                     bool ignore_spike
                         = calculate_spike_operation(tp.operations[0].operation,
                                                     inters,
-                                                    umbrella_strategy.get_point_in_point_strategy());
+                                                    strategy.get_point_in_point_strategy());
 
                     if ( ! BOOST_GEOMETRY_CONDITION(handle_spikes)
                       || ignore_spike
@@ -234,7 +236,7 @@ struct get_turn_info_linear_areal
             {
                 if ( get_turn_info_for_endpoint<true, true>(range_p, range_q,
                         tp_model, inters, method_equal, out,
-                        umbrella_strategy.get_point_in_point_strategy()) )
+                        strategy.get_point_in_point_strategy()) )
                 {
                     // do nothing
                 }
@@ -247,8 +249,7 @@ struct get_turn_info_linear_areal
                         // Both equal
                         // or collinear-and-ending at intersection point
                         equal<TurnInfo>::apply(range_p, range_q, tp,
-                            inters.i_info(), inters.d_info(), inters.sides(),
-                            umbrella_strategy);
+                            inters.i_info(), inters.d_info(), inters.sides());
 
                         turn_transformer_ec<false> transformer(method_touch);
                         transformer(tp);
@@ -279,7 +280,7 @@ struct get_turn_info_linear_areal
                 if ( get_turn_info_for_endpoint<true, true>(
                         range_p, range_q,
                         tp_model, inters, method_collinear, out,
-                        umbrella_strategy.get_point_in_point_strategy()) )
+                        strategy.get_point_in_point_strategy()) )
                 {
                     // do nothing
                 }
@@ -296,8 +297,7 @@ struct get_turn_info_linear_areal
                         {
                             // Collinear, but similar thus handled as equal
                             equal<TurnInfo>::apply(range_p, range_q, tp,
-                                inters.i_info(), inters.d_info(), inters.sides(),
-                                umbrella_strategy);
+                                inters.i_info(), inters.d_info(), inters.sides());
 
                             method_replace = method_touch;
                             version = append_equal;
@@ -359,13 +359,13 @@ struct get_turn_info_linear_areal
 
                     if ( range_p.is_first_segment()
                       && equals::equals_point_point(range_p.at(0), tp.point,
-                                                    umbrella_strategy.get_point_in_point_strategy()) )
+                                                    strategy.get_point_in_point_strategy()) )
                     {
                         tp.operations[0].position = position_front;
                     }
                     else if ( range_p.is_last_segment()
                            && equals::equals_point_point(range_p.at(1), tp.point,
-                                                         umbrella_strategy.get_point_in_point_strategy()) )
+                                                         strategy.get_point_in_point_strategy()) )
                     {
                         tp.operations[0].position = position_back;
                     }

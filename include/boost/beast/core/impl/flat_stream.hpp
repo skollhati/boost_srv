@@ -16,6 +16,7 @@
 #include <boost/beast/core/stream_traits.hpp>
 #include <boost/beast/websocket/teardown.hpp>
 #include <boost/asio/buffer.hpp>
+#include <boost/asio/coroutine.hpp>
 #include <memory>
 
 namespace boost {
@@ -29,6 +30,7 @@ template<class Handler>
 class write_op
     : public async_base<Handler,
         beast::executor_type<flat_stream>>
+    , public net::coroutine
 {
 public:
     template<

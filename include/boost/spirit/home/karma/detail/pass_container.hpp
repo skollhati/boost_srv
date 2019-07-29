@@ -383,8 +383,9 @@ namespace boost { namespace spirit { namespace karma { namespace detail
 
         F f;
 
+    private:
         // silence MSVC warning C4512: assignment operator could not be generated
-        BOOST_DELETED_FUNCTION(pass_container& operator= (pass_container const&))
+        pass_container& operator= (pass_container const&);
     };
 }}}}
 

@@ -30,7 +30,9 @@
 #include <boost/beast/core/static_buffer.hpp>
 #include <boost/beast/core/stream_traits.hpp>
 #include <boost/beast/core/detail/clamp.hpp>
+#include <boost/beast/core/detail/type_traits.hpp>
 #include <boost/beast/version.hpp>
+#include <boost/asio/bind_executor.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/core/empty_value.hpp>
 #include <boost/enable_shared_from_this.hpp>
@@ -273,6 +275,13 @@ struct stream<NextLayer, deflateSupported>::impl_type
                 return key;
     }
 
+    std::size_t
+    read_size_hint(std::size_t initial_size) const
+    {
+        return this->read_size_hint_pmd(
+            initial_size, rd_done, rd_remain, rd_fh);
+    }
+
     template<class DynamicBuffer>
     std::size_t
     read_size_hint_db(DynamicBuffer& buffer) const
@@ -282,8 +291,7 @@ struct stream<NextLayer, deflateSupported>::impl_type
             buffer.max_size() - buffer.size());
         if(initial_size == 0)
             return 1; // buffer is full
-        return this->read_size_hint_pmd(
-            initial_size, rd_done, rd_remain, rd_fh);
+        return this->read_size_hint(initial_size);
     }
 
     template<class DynamicBuffer>
@@ -763,12 +771,10 @@ parse_fh(
     {
     case 126:
     {
-
-        std::uint16_t len_be;
-        BOOST_ASSERT(buffer_bytes(cb) >= sizeof(len_be));
-        cb.consume(net::buffer_copy(
-            net::mutable_buffer(&len_be, sizeof(len_be)), cb));
-        fh.len = endian::big_to_native(len_be);
+        std::uint8_t tmp[2];
+        BOOST_ASSERT(buffer_bytes(cb) >= sizeof(tmp));
+        cb.consume(net::buffer_copy(net::buffer(tmp), cb));
+        fh.len = detail::big_uint16_to_native(&tmp[0]);
         if(fh.len < 126)
         {
             // length not canonical
@@ -779,11 +785,10 @@ parse_fh(
     }
     case 127:
     {
-        std::uint64_t len_be;
-        BOOST_ASSERT(buffer_bytes(cb) >= sizeof(len_be));
-        cb.consume(net::buffer_copy(
-            net::mutable_buffer(&len_be, sizeof(len_be)), cb));
-        fh.len = endian::big_to_native(len_be);
+        std::uint8_t tmp[8];
+        BOOST_ASSERT(buffer_bytes(cb) >= sizeof(tmp));
+        cb.consume(net::buffer_copy(net::buffer(tmp), cb));
+        fh.len = detail::big_uint64_to_native(&tmp[0]);
         if(fh.len < 65536)
         {
             // length not canonical
@@ -795,11 +800,10 @@ parse_fh(
     }
     if(fh.mask)
     {
-        std::uint32_t key_le;
-        BOOST_ASSERT(buffer_bytes(cb) >= sizeof(key_le));
-        cb.consume(net::buffer_copy(
-            net::mutable_buffer(&key_le, sizeof(key_le)), cb));
-        fh.key = endian::little_to_native(key_le);
+        std::uint8_t tmp[4];
+        BOOST_ASSERT(buffer_bytes(cb) >= sizeof(tmp));
+        cb.consume(net::buffer_copy(net::buffer(tmp), cb));
+        fh.key = detail::little_uint32_to_native(&tmp[0]);
         detail::prepare_key(rd_key, fh.key);
     }
     else
@@ -905,10 +909,12 @@ write_close(DynamicBuffer& db, close_reason const& cr)
         if(fh.mask)
             detail::prepare_key(key, fh.key);
         {
-            auto code_be = endian::native_to_big<std::uint16_t>(cr.code);
+            std::uint8_t tmp[2];
+            ::new(&tmp[0]) big_uint16_buf_t{
+                (std::uint16_t)cr.code};
             auto mb = db.prepare(2);
             net::buffer_copy(mb,
-                net::const_buffer(&code_be, sizeof(code_be)));
+                net::buffer(tmp));
             if(fh.mask)
                 detail::mask_inplace(mb, key);
             db.commit(2);

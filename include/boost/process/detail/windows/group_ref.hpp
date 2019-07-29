@@ -6,10 +6,9 @@
 #ifndef BOOST_PROCESS_DETAIL_WINDOWS_GROUP_REF_HPP_
 #define BOOST_PROCESS_DETAIL_WINDOWS_GROUP_REF_HPP_
 
-#include <boost/winapi/process.hpp>
 #include <boost/process/detail/config.hpp>
 #include <boost/process/detail/windows/group_handle.hpp>
-#include <boost/process/detail/used_handles.hpp>
+#include <boost/winapi/process.hpp>
 #include <boost/process/detail/windows/handler.hpp>
 
 namespace boost { namespace process {
@@ -18,11 +17,9 @@ namespace detail { namespace windows {
 
 
 
-struct group_ref : handler_base_ext, ::boost::process::detail::uses_handles
+struct group_ref : handler_base_ext
 {
     ::boost::winapi::HANDLE_ handle;
-
-    ::boost::winapi::HANDLE_ get_used_handles() const { return handle; }
 
     explicit group_ref(group_handle &g) :
                 handle(g.handle())

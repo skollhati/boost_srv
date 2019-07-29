@@ -23,6 +23,7 @@
 #include <boost/beast/core/role.hpp>
 #include <boost/beast/core/stream_traits.hpp>
 #include <boost/beast/core/string.hpp>
+#include <boost/beast/core/detail/type_traits.hpp>
 #include <boost/beast/http/detail/type_traits.hpp>
 #include <boost/asio/async_result.hpp>
 #include <boost/asio/error.hpp>
@@ -219,7 +220,7 @@ public:
         @return A copy of the executor that stream will use to dispatch handlers.
     */
     executor_type
-    get_executor() noexcept;
+    get_executor() const noexcept;
 
     /** Get a reference to the next layer
 

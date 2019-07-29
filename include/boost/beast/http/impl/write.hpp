@@ -14,9 +14,8 @@
 #include <boost/beast/core/async_base.hpp>
 #include <boost/beast/core/bind_handler.hpp>
 #include <boost/beast/core/buffers_range.hpp>
-#include <boost/beast/core/make_printable.hpp>
+#include <boost/beast/core/ostream.hpp>
 #include <boost/beast/core/stream_traits.hpp>
-#include <boost/beast/core/detail/is_invocable.hpp>
 #include <boost/asio/coroutine.hpp>
 #include <boost/asio/post.hpp>
 #include <boost/asio/write.hpp>
@@ -160,7 +159,7 @@ template<
 class write_op
     : public beast::async_base<
         Handler, beast::executor_type<Stream>>
-    , public asio::coroutine
+    , public net::coroutine
 {
     Stream& s_;
     serializer<isRequest, Body, Fields>& sr_;
@@ -263,7 +262,7 @@ struct run_write_some_op
 {
     template<
         class WriteHandler,
-        class Stream,
+        class Stream, 
         bool isRequest, class Body, class Fields>
     void
     operator()(
@@ -904,7 +903,7 @@ operator<<(std::ostream& os,
 {
     typename Fields::writer fr{
         h, h.version(), h.method()};
-    return os << beast::make_printable(fr.get());
+    return os << buffers(fr.get());
 }
 
 template<class Fields>
@@ -914,7 +913,7 @@ operator<<(std::ostream& os,
 {
     typename Fields::writer fr{
         h, h.version(), h.result_int()};
-    return os << beast::make_printable(fr.get());
+    return os << buffers(fr.get());
 }
 
 template<bool isRequest, class Body, class Fields>

@@ -13,7 +13,9 @@
 #include <boost/beast/core/async_base.hpp>
 #include <boost/beast/core/buffer_traits.hpp>
 #include <boost/beast/core/buffers_prefix.hpp>
+#include <boost/beast/core/detail/type_traits.hpp>
 #include <boost/beast/websocket/teardown.hpp>
+#include <boost/asio/bind_executor.hpp>
 #include <boost/asio/coroutine.hpp>
 #include <boost/assert.hpp>
 #include <boost/make_shared.hpp>
@@ -159,21 +161,12 @@ close()
 //------------------------------------------------------------------------------
 
 template<class Protocol, class Executor, class RatePolicy>
-template<class Executor2>
 struct basic_stream<Protocol, Executor, RatePolicy>::
     timeout_handler
 {
-    using executor_type = Executor2;
-
     op_state& state;
     boost::weak_ptr<impl_type> wp;
     tick_type tick;
-    executor_type ex;
-
-    executor_type get_executor() const noexcept
-    {
-        return ex;
-    }
 
     void
     operator()(error_code ec)
@@ -219,34 +212,62 @@ class transfer_op
     using is_read = std::integral_constant<bool, isRead>;
 
     op_state&
+    state(std::true_type)
+    {
+        return impl_->read;
+    }
+
+    op_state&
+    state(std::false_type)
+    {
+        return impl_->write;
+    }
+
+    op_state&
     state()
     {
-        if (isRead)
-            return impl_->read;
-        else
-            return impl_->write;
+        return state(
+            std::integral_constant<bool, isRead>{});
+    }
+
+    std::size_t
+    available_bytes(std::true_type)
+    {
+        return rate_policy_access::
+            available_read_bytes(impl_->policy());
+    }
+
+    std::size_t
+    available_bytes(std::false_type)
+    {
+        return rate_policy_access::
+            available_write_bytes(impl_->policy());
     }
 
     std::size_t
     available_bytes()
     {
-        if (isRead)
-            return rate_policy_access::
-                available_read_bytes(impl_->policy());
-        else
-            return rate_policy_access::
-                available_write_bytes(impl_->policy());
+        return available_bytes(is_read{});
+    }
+
+    void
+    transfer_bytes(std::size_t n, std::true_type)
+    {
+        rate_policy_access::
+            transfer_read_bytes(impl_->policy(), n);
+    }
+
+    void
+    transfer_bytes(std::size_t n, std::false_type)
+    {
+        rate_policy_access::
+            transfer_write_bytes(impl_->policy(), n);
     }
 
     void
     transfer_bytes(std::size_t n)
     {
-        if (isRead)
-            rate_policy_access::
-                transfer_read_bytes(impl_->policy(), n);
-        else
-            rate_policy_access::
-                transfer_write_bytes(impl_->policy(), n);
+        transfer_bytes(n, is_read{});
     }
 
     void
@@ -308,11 +329,13 @@ public:
             // if a timeout is active, wait on the timer
             if(state().timer.expiry() != never())
                 state().timer.async_wait(
-                    timeout_handler<decltype(this->get_executor())>{
-                        state(),
-                        impl_,
-                        state().tick,
-                        this->get_executor()});
+                    net::bind_executor(
+                        this->get_executor(),
+                        timeout_handler{
+                            state(),
+                            impl_,
+                            state().tick
+                        }));
 
             // check rate limit, maybe wait
             std::size_t amount;
@@ -407,11 +430,12 @@ public:
     {
         if(state().timer.expiry() != stream_base::never())
             impl_->write.timer.async_wait(
-                timeout_handler<decltype(this->get_executor())>{
-                    state(),
-                    impl_,
-                    state().tick,
-                    this->get_executor()});
+                net::bind_executor(
+                    this->get_executor(),
+                    timeout_handler{
+                        state(),
+                        impl_,
+                        state().tick}));
 
         impl_->socket.async_connect(
             ep, std::move(*this));
@@ -434,11 +458,12 @@ public:
     {
         if(state().timer.expiry() != stream_base::never())
             impl_->write.timer.async_wait(
-                timeout_handler<decltype(this->get_executor())>{
-                    state(),
-                    impl_,
-                    state().tick,
-                    this->get_executor()});
+                net::bind_executor(
+                    this->get_executor(),
+                    timeout_handler{
+                        state(),
+                        impl_,
+                        state().tick}));
 
         net::async_connect(impl_->socket,
             eps, cond, std::move(*this));
@@ -461,11 +486,12 @@ public:
     {
         if(state().timer.expiry() != stream_base::never())
             impl_->write.timer.async_wait(
-                timeout_handler<decltype(this->get_executor())>{
-                    state(),
-                    impl_,
-                    state().tick,
-                    this->get_executor()});
+                net::bind_executor(
+                    this->get_executor(),
+                    timeout_handler{
+                        state(),
+                        impl_,
+                        state().tick}));
 
         net::async_connect(impl_->socket,
             begin, end, cond, std::move(*this));

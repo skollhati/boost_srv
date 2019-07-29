@@ -81,7 +81,7 @@ class boundary_checker<Geometry, WithinStrategy, multi_linestring_tag>
 
 public:
     typedef WithinStrategy equals_strategy_type;
-    
+
     boundary_checker(Geometry const& g)
         : is_filled(false), geometry(g)
     {}
@@ -91,8 +91,6 @@ public:
     template <boundary_query BoundaryQuery>
     bool is_endpoint_boundary(point_type const& pt) const
     {
-        typedef geometry::less<point_type, -1, typename WithinStrategy::cs_tag> less_type;
-
         typedef typename boost::range_size<Geometry>::type size_type;
         size_type multi_count = boost::size(geometry);
 
@@ -144,7 +142,7 @@ public:
 
             std::sort(boundary_points.begin(),
                       boundary_points.end(),
-                      less_type());
+                      geometry::less<point_type>());
 
             is_filled = true;
         }
@@ -154,7 +152,7 @@ public:
                 std::equal_range(boundary_points.begin(),
                                  boundary_points.end(),
                                  pt,
-                                 less_type())
+                                 geometry::less<point_type>())
             );
 
         return equal_points_count % 2 != 0;// && equal_points_count > 0; // the number is odd and > 0

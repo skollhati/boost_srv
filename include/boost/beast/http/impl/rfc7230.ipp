@@ -11,7 +11,6 @@
 #define BOOST_BEAST_HTTP_IMPL_RFC7230_IPP
 
 #include <boost/beast/http/rfc7230.hpp>
-#include <algorithm>
 
 namespace boost {
 namespace beast {
@@ -124,24 +123,6 @@ increment()
     }
 }
 
-auto
-ext_list::
-find(string_view const& s) -> const_iterator
-{
-    return std::find_if(begin(), end(),
-        [&s](value_type const& v)
-        {
-            return beast::iequals(s, v.first);
-        });
-}
-
-bool
-ext_list::
-exists(string_view const& s)
-{
-    return find(s) != end();
-}
-
 void
 token_list::const_iterator::
 increment()
@@ -186,18 +167,6 @@ increment()
         need_comma = false;
         ++it_;
     }
-}
-
-bool
-token_list::
-exists(string_view const& s)
-{
-    return std::find_if(begin(), end(),
-        [&s](value_type const& v)
-        {
-            return beast::iequals(s, v);
-        }
-    ) != end();
 }
 
 } // http

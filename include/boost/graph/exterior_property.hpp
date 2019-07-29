@@ -14,7 +14,8 @@
 namespace boost {
 namespace detail {
     // The vector matrix provides a little abstraction over vector
-    // types that makes matrices easier to work with.
+    // types that makes matrices easier to work with. Note that it's
+    // non-copyable, meaning you should be passing it by value.
     template <typename Value>
     struct vector_matrix
     {
@@ -27,7 +28,7 @@ namespace detail {
         typedef container_type* pointer;
         typedef typename matrix_type::size_type size_type;
 
-        // Instantiate the matrix over n elements (creates an n by n matrix).
+        // Instantiate the matrix over n elements (creates an nxn matrix).
         // The graph has to be passed in order to ensure the index maps
         // are constructed correctly when returning indexible elements.
         inline vector_matrix(size_type n)

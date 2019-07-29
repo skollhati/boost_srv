@@ -190,17 +190,17 @@ public:
         @return An iterator to the matching token, or `end()` if no
         token exists.
     */
-    BOOST_BEAST_DECL
+    template<class T>
     const_iterator
-    find(string_view const& s);
+    find(T const& s);
 
     /** Return `true` if a token is present in the list.
 
         @param s The token to find. A case-insensitive comparison is used.
     */
-    BOOST_BEAST_DECL
+    template<class T>
     bool
-    exists(string_view const& s);
+    exists(T const& s);
 };
 
 //------------------------------------------------------------------------------
@@ -275,9 +275,9 @@ public:
 
         @param s The token to find. A case-insensitive comparison is used.
     */
-    BOOST_BEAST_DECL
+    template<class T>
     bool
-    exists(string_view const& s);
+    exists(T const& s);
 };
 
 /** A list of tokens in a comma separated HTTP field value.

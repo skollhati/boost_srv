@@ -4,10 +4,6 @@
 //
 // Copyright (c) 2011-2019 Adam Wulkiewicz, Lodz, Poland.
 //
-// This file was modified by Oracle on 2019.
-// Modifications copyright (c) 2019 Oracle and/or its affiliates.
-// Contributed and/or modified by Adam Wulkiewicz, on behalf of Oracle
-//
 // Use, modification and distribution is subject to the Boost Software License,
 // Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
@@ -61,16 +57,11 @@ public:
         // children are leafs
         if ( node_relative_level <= 1 )
         {
-            return choose_by_minimum_overlap_cost(children, indexable,
-                                                  parameters.get_overlap_cost_threshold(),
-                                                  index::detail::get_strategy(parameters));
+            return choose_by_minimum_overlap_cost(children, indexable, parameters.get_overlap_cost_threshold());
         }
         // children are internal nodes
         else
-        {
-            return choose_by_minimum_content_cost(children, indexable,
-                                                  index::detail::get_strategy(parameters));
-        }
+            return choose_by_minimum_content_cost(children, indexable);
     }
 
 private:
@@ -88,11 +79,10 @@ private:
         }
     };
 
-    template <typename Indexable, typename Strategy>
+    template <typename Indexable>
     static inline size_t choose_by_minimum_overlap_cost(children_type const& children,
                                                         Indexable const& indexable,
-                                                        size_t overlap_cost_threshold,
-                                                        Strategy const& strategy)
+                                                        size_t overlap_cost_threshold)
     {
         const size_t children_count = children.size();
 
@@ -110,7 +100,7 @@ private:
 
             // expanded child node's box
             Box box_exp(ch_i.first);
-            index::detail::expand(box_exp, indexable, strategy);
+            geometry::expand(box_exp, indexable);
 
             // areas difference
             content_type content = index::detail::content(box_exp);
@@ -141,11 +131,7 @@ private:
             }
 
             // calculate minimum or nearly minimum overlap cost
-            choosen_index = choose_by_minimum_overlap_cost_first_n(children, indexable,
-                                                                   first_n_children_count,
-                                                                   children_count,
-                                                                   children_contents,
-                                                                   strategy);
+            choosen_index = choose_by_minimum_overlap_cost_first_n(children, indexable, first_n_children_count, children_count, children_contents);
         }
 
         return choosen_index;
@@ -157,13 +143,12 @@ private:
             || (p1.content_diff == p2.content_diff && (p1.content) < (p2.content));
     }
 
-    template <typename Indexable, typename ChildrenContents, typename Strategy>
+    template <typename Indexable, typename ChildrenContents>
     static inline size_t choose_by_minimum_overlap_cost_first_n(children_type const& children,
                                                                 Indexable const& indexable,
                                                                 size_t const first_n_children_count,
                                                                 size_t const children_count,
-                                                                ChildrenContents const& children_contents,
-                                                                Strategy const& strategy)
+                                                                ChildrenContents const& children_contents)
     {
         BOOST_GEOMETRY_INDEX_ASSERT(first_n_children_count <= children_count, "unexpected value");
         BOOST_GEOMETRY_INDEX_ASSERT(children_contents.size() == children_count, "unexpected number of elements");
@@ -185,7 +170,7 @@ private:
 
             Box box_exp(ch_i.first);
             // calculate expanded box of child node ch_i
-            index::detail::expand(box_exp, indexable, strategy);
+            geometry::expand(box_exp, indexable);
 
             content_type overlap_diff = 0;
 
@@ -196,10 +181,10 @@ private:
                 {
                     child_type const& ch_j = children[j];
 
-                    content_type overlap_exp = index::detail::intersection_content(box_exp, ch_j.first, strategy);
+                    content_type overlap_exp = index::detail::intersection_content(box_exp, ch_j.first);
                     if ( overlap_exp < -std::numeric_limits<content_type>::epsilon() || std::numeric_limits<content_type>::epsilon() < overlap_exp )
                     {
-                        overlap_diff += overlap_exp - index::detail::intersection_content(ch_i.first, ch_j.first, strategy);
+                        overlap_diff += overlap_exp - index::detail::intersection_content(ch_i.first, ch_j.first);
                     }
                 }
             }
@@ -220,10 +205,8 @@ private:
         return choosen_index;
     }
 
-    template <typename Indexable, typename Strategy>
-    static inline size_t choose_by_minimum_content_cost(children_type const& children,
-                                                        Indexable const& indexable,
-                                                        Strategy const& strategy)
+    template <typename Indexable>
+    static inline size_t choose_by_minimum_content_cost(children_type const& children, Indexable const& indexable)
     {
         size_t children_count = children.size();
 
@@ -239,7 +222,7 @@ private:
 
             // expanded child node's box
             Box box_exp(ch_i.first);
-            index::detail::expand(box_exp, indexable, strategy);
+            geometry::expand(box_exp, indexable);
 
             // areas difference
             content_type content = index::detail::content(box_exp);

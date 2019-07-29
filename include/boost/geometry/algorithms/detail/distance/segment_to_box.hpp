@@ -542,8 +542,10 @@ private:
                                  SBStrategy const& sb_strategy,
                                  ReturnType& result)
         {
-            typename SBStrategy::side_strategy_type
-                side_strategy = sb_strategy.get_side_strategy();
+            typedef typename geometry::strategy::side::services::default_strategy
+                <
+                    typename geometry::cs_tag<SegmentPoint>::type
+                >::type side;
 
             typedef cast_to_result<ReturnType> cast;
             ReturnType diff1 = cast::apply(geometry::get<1>(p1))
@@ -553,12 +555,12 @@ private:
                                 sb_strategy.get_distance_ps_strategy();
 
             int sign = diff1 < 0 ? -1 : 1;
-            if (side_strategy.apply(p0, p1, corner1) * sign < 0)
+            if (side::apply(p0, p1, corner1) * sign < 0)
             {
                 result = cast::apply(ps_strategy.apply(corner1, p0, p1));
                 return true;
             }
-            if (side_strategy.apply(p0, p1, corner2) * sign > 0)
+            if (side::apply(p0, p1, corner2) * sign > 0)
             {
                 result = cast::apply(ps_strategy.apply(corner2, p0, p1));
                 return true;
@@ -680,7 +682,7 @@ public:
                                    BoxPoint const& bottom_right,
                                    SBStrategy const& sb_strategy)
     {
-        BOOST_GEOMETRY_ASSERT( (geometry::less<SegmentPoint, -1, typename SBStrategy::cs_tag>()(p0, p1))
+        BOOST_GEOMETRY_ASSERT( geometry::less<SegmentPoint>()(p0, p1)
                             || geometry::has_nan_coordinate(p0)
                             || geometry::has_nan_coordinate(p1) );
 
@@ -780,9 +782,15 @@ public:
                         >,
                     typename strategy::distance::services::comparable_type
                         <
-                            typename SBStrategy::distance_pb_strategy::type
+                            typename detail::distance::default_strategy
+                                <
+                                    segment_point, Box
+                                >::type
                         >::type,
-                    typename SBStrategy::distance_pb_strategy::type
+                    typename detail::distance::default_strategy
+                        <
+                            segment_point, Box
+                        >::type
                 >::type point_box_strategy_type;
 
             return dispatch::distance
@@ -801,8 +809,7 @@ public:
                            bottom_left, bottom_right,
                            top_left, top_right);
 
-        typedef geometry::less<segment_point, -1, typename SBStrategy::cs_tag> less_type;
-        if (less_type()(p[0], p[1]))
+        if (geometry::less<segment_point>()(p[0], p[1]))
         {
             return segment_to_box_2D
                 <

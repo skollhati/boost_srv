@@ -13,7 +13,6 @@
 #include <boost/beast/core/detail/config.hpp>
 #include <boost/beast/core/buffer_traits.hpp>
 #include <boost/beast/core/detail/buffer.hpp>
-#include <boost/beast/core/detail/clamp.hpp>
 #include <boost/beast/http/error.hpp>
 #include <boost/beast/http/message.hpp>
 #include <boost/optional.hpp>
@@ -90,7 +89,7 @@ struct basic_dynamic_body
             error_code& ec)
         {
             auto const n = buffer_bytes(buffers);
-            if(beast::detail::sum_exceeds(body_.size(), n, body_.max_size()))
+            if(body_.size() > body_.max_size() - n)
             {
                 ec = error::buffer_overflow;
                 return 0;

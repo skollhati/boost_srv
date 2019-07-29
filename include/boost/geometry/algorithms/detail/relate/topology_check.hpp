@@ -163,7 +163,8 @@ struct topology_check<MultiLinestring, EqPPStrategy, multi_linestring_tag>
     }
 
 private:
-    typedef geometry::less<void, -1, typename EqPPStrategy::cs_tag> less_type;
+// TODO: CS-specific less derived from EqPPStrategy
+    typedef geometry::less<> less_type;
 
     void init() const
     {

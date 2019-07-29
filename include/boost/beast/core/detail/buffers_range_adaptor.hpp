@@ -38,9 +38,13 @@ public:
             buffers_iterator_type<BufferSequence>;
 
         iter_type it_{};
+        buffers_range_adaptor const* b_ = nullptr;
 
-        const_iterator(iter_type const& it)
+        const_iterator(
+            buffers_range_adaptor const& b,
+            iter_type const& it)
             : it_(it)
+            , b_(&b)
         {
         }
 
@@ -58,7 +62,7 @@ public:
         bool
         operator==(const_iterator const& other) const
         {
-            return it_ == other.it_;
+            return b_ == other.b_ && it_ == other.it_;
         }
 
         bool
@@ -107,6 +111,11 @@ public:
         }
     };
 
+    buffers_range_adaptor(
+        buffers_range_adaptor const&) = default;
+    buffers_range_adaptor& operator=(
+        buffers_range_adaptor const&) = default;
+
     explicit
     buffers_range_adaptor(BufferSequence const& b)
         : b_(b)
@@ -116,13 +125,13 @@ public:
     const_iterator
     begin() const noexcept
     {
-        return {net::buffer_sequence_begin(b_)};
+        return {*this, net::buffer_sequence_begin(b_)};
     }
 
     const_iterator
     end() const noexcept
     {
-        return {net::buffer_sequence_end(b_)};
+        return {*this, net::buffer_sequence_end(b_)};
     }
 };
 

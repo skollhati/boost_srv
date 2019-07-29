@@ -20,29 +20,7 @@ Distributed under the Boost Software License, Version 1.0.
 #if defined(_MSC_VER) && !defined(__clang__) // MSVC
     // This must be checked first, because otherwise it produces a fatal
     // error due to unrecognized #warning directives used below.
-
-#   if _MSC_VER < 1915
-#       pragma message("Warning: the native Microsoft compiler is not supported due to lack of proper C++14 support.")
-#   else
-        // 1. Active issues
-        // Multiple copy/move ctors
-#       define BOOST_HANA_WORKAROUND_MSVC_MULTIPLECTOR_106654
-
-        // 2. Issues fixed in the development branch of MSVC
-        // Forward declaration of class template member function returning decltype(auto)
-#       define BOOST_HANA_WORKAROUND_MSVC_DECLTYPEAUTO_RETURNTYPE_662735
-
-        // 3. Issues fixed conditionally
-        // Requires __declspec(empty_bases)
-        // Empty base optimization
-#       define BOOST_HANA_WORKAROUND_MSVC_EMPTYBASE
-
-        // Requires /experimental:preprocessor
-        // Variadic macro expansion
-#       if !defined(_MSVC_TRADITIONAL) || _MSVC_TRADITIONAL
-#           define BOOST_HANA_WORKAROUND_MSVC_PREPROCESSOR_616033
-#       endif
-#   endif
+#   pragma message("Warning: the native Microsoft compiler is not supported due to lack of proper C++14 support.")
 
 #elif defined(__clang__) && defined(_MSC_VER) // Clang-cl (Clang for Windows)
 
@@ -62,7 +40,7 @@ Distributed under the Boost Software License, Version 1.0.
 #   if __apple_build_version__ >= 6020049
 #       define BOOST_HANA_CONFIG_CLANG BOOST_HANA_CONFIG_VERSION(3, 6, 0)
 #   else
-#       warning "Versions of Apple's Clang prior to the one shipped with Xcode 6.3 are known not to be able to compile Hana."
+#       warning "Versions of Apple's Clang prior to the one shipped with Xcode 6.3 are not supported by Hana."
 #   endif
 
 #elif defined(__clang__) // genuine Clang
@@ -94,9 +72,7 @@ Distributed under the Boost Software License, Version 1.0.
 //////////////////////////////////////////////////////////////////////////////
 #if (__cplusplus < 201400)
 #   if defined(_MSC_VER)
-#       if _MSC_VER < 1915
-#           pragma message("Warning: Your compiler doesn't provide C++14 or higher capabilities. Try adding the compiler flag '-std=c++14' or '-std=c++1y'.")
-#       endif
+#       pragma message("Warning: Your compiler doesn't provide C++14 or higher capabilities. Try adding the compiler flag '-std=c++14' or '-std=c++1y'.")
 #   else
 #       warning "Your compiler doesn't provide C++14 or higher capabilities. Try adding the compiler flag '-std=c++14' or '-std=c++1y'."
 #   endif

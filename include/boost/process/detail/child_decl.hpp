@@ -145,12 +145,11 @@ public:
 
     bool running(std::error_code & ec) noexcept
     {
-        ec.clear();
-        if (valid() && !_exited() && !ec)
+        if (valid() && !_exited())
         {
             int exit_code = 0;
             auto res = boost::process::detail::api::is_running(_child_handle, exit_code, ec);
-            if (!ec && !res && !_exited())
+            if (!res && !_exited())
                 _exit_status->store(exit_code);
 
             return res;
@@ -160,11 +159,10 @@ public:
 
     void terminate(std::error_code & ec) noexcept
     {
-        if (valid() && running(ec) && !ec)
+        if (valid() && running(ec))
             boost::process::detail::api::terminate(_child_handle, ec);
 
-        if (!ec)
-            _terminated = true;
+        _terminated = true;
     }
 
     void wait(std::error_code & ec) noexcept
@@ -173,8 +171,7 @@ public:
         {
             int exit_code = 0;
             boost::process::detail::api::wait(_child_handle, exit_code, ec);
-            if (!ec)
-                _exit_status->store(exit_code);
+            _exit_status->store(exit_code);
         }
     }
 
@@ -191,7 +188,7 @@ public:
         {
             int exit_code = 0;
             auto b = boost::process::detail::api::wait_until(_child_handle, exit_code, timeout_time, ec);
-            if (!b || ec)
+            if (!b)
                 return false;
             _exit_status->store(exit_code);
         }

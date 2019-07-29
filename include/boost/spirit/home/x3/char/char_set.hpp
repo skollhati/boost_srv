@@ -67,11 +67,18 @@ namespace boost { namespace spirit { namespace x3
         {
             using spirit::x3::detail::cast_char;
 
-            auto* definition = traits::get_c_string(str);
-            auto ch = *definition++;
+            typedef typename
+                remove_const<
+                    typename traits::char_type_of<String>::type
+                >::type
+            in_type;
+
+            in_type const* definition =
+                (in_type const*)traits::get_c_string(str);
+            in_type ch = *definition++;
             while (ch)
             {
-                auto next = *definition++;
+                in_type next = *definition++;
                 if (next == '-')
                 {
                     next = *definition++;

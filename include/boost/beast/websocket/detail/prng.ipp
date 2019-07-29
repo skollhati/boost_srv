@@ -13,10 +13,14 @@
 #include <boost/beast/websocket/detail/prng.hpp>
 #include <boost/beast/core/detail/chacha.hpp>
 #include <boost/beast/core/detail/pcg.hpp>
+#include <boost/align/aligned_alloc.hpp>
+#include <boost/throw_exception.hpp>
 #include <atomic>
 #include <cstdlib>
 #include <mutex>
+#include <new>
 #include <random>
+#include <stdexcept>
 
 namespace boost {
 namespace beast {
@@ -55,92 +59,264 @@ prng_seed(std::seed_seq* ss)
 
 //------------------------------------------------------------------------------
 
-inline
-std::uint32_t
-make_nonce()
+template<class T>
+class prng_pool
 {
-    static std::atomic<std::uint32_t> nonce{0};
-    return ++nonce;
-}
+    std::mutex m_;
+    T* head_ = nullptr;
 
-inline
-beast::detail::pcg make_pcg()
-{
-    auto const pv = prng_seed();
-    return beast::detail::pcg{
-        ((static_cast<std::uint64_t>(pv[0])<<32)+pv[1]) ^
-        ((static_cast<std::uint64_t>(pv[2])<<32)+pv[3]) ^
-        ((static_cast<std::uint64_t>(pv[4])<<32)+pv[5]) ^
-        ((static_cast<std::uint64_t>(pv[6])<<32)+pv[7]), make_nonce()};
-}
-
-#ifdef BOOST_NO_CXX11_THREAD_LOCAL
-
-inline
-std::uint32_t
-secure_generate()
-{
-    struct generator
+public:
+    static
+    prng_pool&
+    instance()
     {
-        std::uint32_t operator()()
+        static prng_pool p;
+        return p;
+    }
+
+    ~prng_pool()
+    {
+        for(auto p = head_; p;)
         {
-            std::lock_guard<std::mutex> guard{mtx};
-            return gen();
+            auto next = p->next;
+            p->~T();
+            boost::alignment::aligned_free(p);
+            p = next;
+        }
+    }
+
+    prng::ref
+    acquire()
+    {
+        {
+            std::lock_guard<
+                std::mutex> g(m_);
+            if(head_)
+            {
+                auto p = head_;
+                head_ = head_->next;
+                return prng::ref(*p);
+            }
+        }
+        auto p = boost::alignment::aligned_alloc(
+            16, sizeof(T));
+        if(! p)
+            BOOST_THROW_EXCEPTION(std::bad_alloc{});
+        return prng::ref(*(::new(p) T()));
+    }
+
+    void
+    release(T& t)
+    {
+        std::lock_guard<
+            std::mutex> g(m_);
+        t.next = head_;
+        head_ = &t;
+    }
+};
+
+prng::ref
+make_prng_no_tls(bool secure)
+{
+    class fast_prng final : public prng
+    {
+        int refs_ = 0;
+        beast::detail::pcg r_;
+
+    public:
+        fast_prng* next = nullptr;
+
+        fast_prng()
+            : r_(
+                []{
+                    auto const pv = prng_seed();
+                    return
+                        ((static_cast<std::uint64_t>(pv[0])<<32)+pv[1]) ^
+                        ((static_cast<std::uint64_t>(pv[2])<<32)+pv[3]) ^
+                        ((static_cast<std::uint64_t>(pv[4])<<32)+pv[5]) ^
+                        ((static_cast<std::uint64_t>(pv[6])<<32)+pv[7]);
+                }(),
+                []{
+                    static std::atomic<
+                        std::uint32_t> nonce{0};
+                    return ++nonce;
+                }())
+        {
         }
 
-        beast::detail::chacha<20> gen;
-        std::mutex mtx;
-    };
-    static generator gen{beast::detail::chacha<20>{prng_seed(), make_nonce()}};
-    return gen();
-}
-
-inline
-std::uint32_t
-fast_generate()
-{
-    struct generator
-    {
-        std::uint32_t operator()()
+    protected:
+        prng&
+        acquire() noexcept override
         {
-            std::lock_guard<std::mutex> guard{mtx};
-            return gen();
+            ++refs_;
+            return *this;
         }
 
-        beast::detail::pcg gen;
-        std::mutex mtx;
+        void
+        release() noexcept override
+        {
+            if(--refs_ == 0)
+                prng_pool<fast_prng>::instance().release(*this);
+        }
+
+        value_type
+        operator()() noexcept override
+        {
+            return r_();
+        }
     };
-    static generator gen{make_pcg()};
-    return gen();
+
+    class secure_prng final : public prng
+    {
+        int refs_ = 0;
+        beast::detail::chacha<20> r_;
+
+    public:
+        secure_prng* next = nullptr;
+
+        secure_prng()
+            : r_(prng_seed(), []
+                {
+                    static std::atomic<
+                        std::uint64_t> nonce{0};
+                    return ++nonce;
+                }())
+        {
+        }
+
+    protected:
+        prng&
+        acquire() noexcept override
+        {
+            ++refs_;
+            return *this;
+        }
+
+        void
+        release() noexcept override
+        {
+            if(--refs_ == 0)
+                prng_pool<secure_prng>::instance().release(*this);
+        }
+
+        value_type
+        operator()() noexcept override
+        {
+            return r_();
+        }
+    };
+
+    if(secure)
+        return prng_pool<secure_prng>::instance().acquire();
+
+    return prng_pool<fast_prng>::instance().acquire();
 }
 
-#else
+//------------------------------------------------------------------------------
 
-inline
-std::uint32_t
-secure_generate()
-{
-    thread_local static beast::detail::chacha<20> gen{prng_seed(), make_nonce()};
-    return gen();
-}
+#ifndef BOOST_NO_CXX11_THREAD_LOCAL
 
-inline
-std::uint32_t
-fast_generate()
+prng::ref
+make_prng_tls(bool secure)
 {
-    thread_local static beast::detail::pcg gen{make_pcg()};
-    return gen();
+    class fast_prng final : public prng
+    {
+        beast::detail::pcg r_;
+
+    public:
+        fast_prng()
+            : r_(
+                []{
+                    auto const pv = prng_seed();
+                    return
+                        ((static_cast<std::uint64_t>(pv[0])<<32)+pv[1]) ^
+                        ((static_cast<std::uint64_t>(pv[2])<<32)+pv[3]) ^
+                        ((static_cast<std::uint64_t>(pv[4])<<32)+pv[5]) ^
+                        ((static_cast<std::uint64_t>(pv[6])<<32)+pv[7]);
+                }(),
+                []{
+                    static std::atomic<
+                        std::uint32_t> nonce{0};
+                    return ++nonce;
+                }())
+        {
+        }
+
+    protected:
+        prng&
+        acquire() noexcept override
+        {
+            return *this;
+        }
+
+        void
+        release() noexcept override
+        {
+        }
+
+        value_type
+        operator()() noexcept override
+        {
+            return r_();
+        }
+    };
+
+    class secure_prng final : public prng
+    {
+        beast::detail::chacha<20> r_;
+
+    public:
+        secure_prng()
+            : r_(prng_seed(), []
+                {
+                    static std::atomic<
+                        std::uint64_t> nonce{0};
+                    return ++nonce;
+                }())
+        {
+        }
+
+    protected:
+        prng&
+        acquire() noexcept override
+        {
+            return *this;
+        }
+
+        void
+        release() noexcept override
+        {
+        }
+
+        value_type
+        operator()() noexcept override
+        {
+            return r_();
+        }
+    };
+
+    if(secure)
+    {
+        thread_local secure_prng sp;
+        return prng::ref(sp);
+    }
+
+    thread_local fast_prng fp;
+    return prng::ref(fp);
 }
 
 #endif
 
-generator
+//------------------------------------------------------------------------------
+
+prng::ref
 make_prng(bool secure)
 {
-    if (secure)
-        return &secure_generate;
-    else
-        return &fast_generate;
+#ifdef BOOST_NO_CXX11_THREAD_LOCAL
+    return make_prng_no_tls(secure);
+#else
+    return make_prng_tls(secure);
+#endif
 }
 
 } // detail

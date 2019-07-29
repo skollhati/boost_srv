@@ -13,7 +13,11 @@
 #include <boost/beast/core/detail/config.hpp>
 #include <boost/beast/core/detail/buffers_pair.hpp>
 #include <boost/asio/buffer.hpp>
+#include <boost/assert.hpp>
+#include <algorithm>
+#include <array>
 #include <cstddef>
+#include <cstring>
 
 namespace boost {
 namespace beast {
@@ -130,7 +134,7 @@ public:
     BOOST_BEAST_DECL
     const_buffers_type
     data() const noexcept;
-
+    
     /// Returns a constant buffer sequence representing the readable bytes
     const_buffers_type
     cdata() const noexcept
@@ -144,7 +148,7 @@ public:
     data() noexcept;
 
     /** Returns a mutable buffer sequence representing writable bytes.
-
+    
         Returns a mutable buffer sequence representing the writable
         bytes containing exactly `n` bytes of storage. Memory may be
         reallocated as needed.

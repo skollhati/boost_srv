@@ -24,7 +24,6 @@
 //!   - boost::container::vector
 //!   - boost::container::stable_vector
 //!   - boost::container::static_vector
-//!   - boost::container::small_vector_base
 //!   - boost::container::small_vector
 //!   - boost::container::slist
 //!   - boost::container::list
@@ -106,25 +105,15 @@ template <class T
          ,class Allocator = void >
 class stable_vector;
 
-template < class T
-         , std::size_t Capacity
-         , class Options = void>
+template <class T, std::size_t Capacity>
 class static_vector;
 
-template < class T
-         , class Allocator = void
-         , class Options   = void >
-class small_vector_base;
-
-template < class T
-         , std::size_t N
-         , class Allocator = void
-         , class Options   = void  >
+template < class T, std::size_t N
+         , class Allocator = void >
 class small_vector;
 
 template <class T
-         ,class Allocator = void
-         ,class Options   = void>
+         ,class Allocator = void >
 class deque;
 
 template <class T
