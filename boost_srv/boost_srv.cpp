@@ -8,34 +8,77 @@
 #include "boost/asio/streambuf.hpp"
 #include "stdafx.h"
 #include "Boost_logger.h"
+#include "BoostBredis.h"
+#include "CustomObjectPool.h"
 
+BoostBredis* InitSetBoostBredis(BoostBredis* b)
+{
+	b->SetBredis();
+	
+	return b;
+}
 
+BoostBredis* ResetBoostBredis(BoostBredis* b)
+{
+	b->ResetBredis();
+	return b;
+}
+enum
+{
+	LOG_RECORDS_TO_WRITE = 10000,
+	THREAD_COUNT = 2
+};
+
+void thread_fun(boost::barrier& bar)
+{
+	// Wait until all threads are created
+	bar.wait();
+
+	// Here we go. First, identify the thread.
+	BOOST_LOG_SCOPED_THREAD_TAG("ThreadID", boost::this_thread::get_id());
+
+	// Now, do some logging
+	for (unsigned int i = 0; i < LOG_RECORDS_TO_WRITE; ++i)
+	{
+		CUSTOM_LOG_TRACE(global_lg::get(), warning)  << "Log record " << i;
+	}
+}
 int main()
 {
 	BoostLogger boostLogger;
-	//init();
-    std::cout << "Hello World!\n";
-	logging::add_common_attributes();
-
+    
+	//logging::add_common_attributes();
 	using namespace logging::trivial;
-	
 
-	BOOST_LOG_SEV(lg, trace) << "A trace severity message";
-	BOOST_LOG_SEV(lg, debug) << "A debug severity message";
-	BOOST_LOG_SEV(lg, info) << "An informational severity message";
-	BOOST_LOG_SEV(lg, warning) << "A warning severity message";
-	BOOST_LOG_SEV(lg, error) << "An error severity message";
-	BOOST_LOG_SEV(lg, fatal) << "A fatal severity message";
+	// Add it to the core
+	logging::core::get()->add_sink(boostLogger.getSink());
+
+	// Add some attributes too
+	logging::core::get()->add_global_attribute("TimeStamp", attrs::local_clock());
+	logging::core::get()->add_global_attribute("RecordID", attrs::counter< unsigned int >());
+
+	// Create logging threads
+	boost::barrier bar(THREAD_COUNT);
+	boost::thread_group threads;
+	for (unsigned int i = 0; i < THREAD_COUNT; ++i)
+		threads.create_thread(boost::bind(&thread_fun, boost::ref(bar)));
+
+	// Wait until all action ends
+	threads.join_all();
+	
+	CustomObjectPool<BoostBredis>* cop ;
+	cop->instance(5, 10, &InitSetBoostBredis, &ResetBoostBredis);
+
 
 }
 
-// 프로그램 실행: <Ctrl+F5> 또는 [디버그] > [디버깅하지 않고 시작] 메뉴
-// 프로그램 디버그: <F5> 키 또는 [디버그] > [디버깅 시작] 메뉴
 
-// 시작을 위한 팁: 
-//   1. [솔루션 탐색기] 창을 사용하여 파일을 추가/관리합니다.
-//   2. [팀 탐색기] 창을 사용하여 소스 제어에 연결합니다.
-//   3. [출력] 창을 사용하여 빌드 출력 및 기타 메시지를 확인합니다.
-//   4. [오류 목록] 창을 사용하여 오류를 봅니다.
-//   5. [프로젝트] > [새 항목 추가]로 이동하여 새 코드 파일을 만들거나, [프로젝트] > [기존 항목 추가]로 이동하여 기존 코드 파일을 프로젝트에 추가합니다.
-//   6. 나중에 이 프로젝트를 다시 열려면 [파일] > [열기] > [프로젝트]로 이동하고 .sln 파일을 선택합니다.
+
+//BOOST_LOG_SCOPED_THREAD_TAG("ThreadID", boost::this_thread::get_id());
+//BOOST_LOG_SEV(global_lg::get(), trace) << "A trace severity message";
+//BOOST_LOG_SEV(global_lg::get(), debug) << "A debug severity message";
+//BOOST_LOG_SEV(global_lg::get(), info) << "An informational severity message";
+//BOOST_LOG_SEV(global_lg::get(), warning) << "A warning severity message";
+//BOOST_LOG_SEV(global_lg::get(), error) << "An error severity message";
+//BOOST_LOG_SEV(global_lg::get(), fatal) << "A fatal severity message";
+//LFC1_LOG_TRACE(global_lg::get(),error)<<"test";

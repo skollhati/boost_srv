@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="헤더 파일\CustomObjectPool">
+      <UniqueIdentifier>{2d736e05-0c17-4967-a412-cc9adb61a845}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="boost_srv.cpp">
@@ -31,6 +34,12 @@
     </ClInclude>
     <ClInclude Include="Boost_logger.h">
       <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="BoostBredis.h">
+      <Filter>헤더 파일\CustomObjectPool</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomObjectPool.h">
+      <Filter>헤더 파일\CustomObjectPool</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
