@@ -159,10 +159,12 @@
     <ClCompile Include="Server.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BoostNetwork.h" />
     <ClInclude Include="CustomObjectPool.h" />
     <ClInclude Include="BoostBredis.h" />
     <ClInclude Include="Boost_logger.h" />
     <ClInclude Include="Server.h" />
+    <ClInclude Include="Session.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
