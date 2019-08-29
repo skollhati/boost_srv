@@ -13,7 +13,10 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="헤더 파일\CustomObjectPool">
+    <Filter Include="헤더 파일\Location">
+      <UniqueIdentifier>{7b6c144c-6127-4d7c-ac39-5606cebb04e5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\PublicModule">
       <UniqueIdentifier>{2d736e05-0c17-4967-a412-cc9adb61a845}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -24,6 +27,12 @@
     <ClCompile Include="Server.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="DBConn.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="DBConnectionPool_cpp.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Server.h">
@@ -32,20 +41,44 @@
     <ClInclude Include="stdafx.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Boost_logger.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="BoostBredis.h">
-      <Filter>헤더 파일\CustomObjectPool</Filter>
+      <Filter>헤더 파일\PublicModule</Filter>
     </ClInclude>
     <ClInclude Include="CustomObjectPool.h">
-      <Filter>헤더 파일\CustomObjectPool</Filter>
+      <Filter>헤더 파일\PublicModule</Filter>
     </ClInclude>
     <ClInclude Include="BoostNetwork.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Session.h">
       <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Lobby.h">
+      <Filter>헤더 파일\Location</Filter>
+    </ClInclude>
+    <ClInclude Include="ChatChannel.h">
+      <Filter>헤더 파일\Location</Filter>
+    </ClInclude>
+    <ClInclude Include="GameWaitingRoom.h">
+      <Filter>헤더 파일\Location</Filter>
+    </ClInclude>
+    <ClInclude Include="GamePlayRoom.h">
+      <Filter>헤더 파일\Location</Filter>
+    </ClInclude>
+    <ClInclude Include="LocationDefault.h">
+      <Filter>헤더 파일\Location</Filter>
+    </ClInclude>
+    <ClInclude Include="MySQL.h">
+      <Filter>헤더 파일\PublicModule</Filter>
+    </ClInclude>
+    <ClInclude Include="Market.h">
+      <Filter>헤더 파일\Location</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayAdjustment.h">
+      <Filter>헤더 파일\Location</Filter>
+    </ClInclude>
+    <ClInclude Include="Boost_logger.h">
+      <Filter>헤더 파일\PublicModule</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

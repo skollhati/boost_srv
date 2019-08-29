@@ -1,5 +1,5 @@
 #pragma once
-#include "stdafx.h"
+
 
 #include <boost/make_shared.hpp>
 #include <boost/asio.hpp>
@@ -7,8 +7,7 @@
 #include <boost/ref.hpp>
 #include <boost/asio/ip/address.hpp>
 #include <boost/system/error_code.hpp>
-
-#include "Session.h"
+#include "ServerSession.h"
 
 using namespace boost::asio::ip;
 class BoostNetworkServer
@@ -16,14 +15,14 @@ class BoostNetworkServer
 public:
 
 	BoostNetworkServer();
-	BoostNetworkServer(int port_number):p_EndPoint(tcp::v4(), port_number),m_Accepter(m_IoContext,p_EndPoint)
+	BoostNetworkServer(int port_number) :p_EndPoint(tcp::v4(), port_number), m_Accepter(m_IoContext, p_EndPoint)
 	{
 		try_accept();
 	}
-	
-		
+
+
 	~BoostNetworkServer();
-	
+
 
 
 private:
@@ -34,7 +33,7 @@ private:
 			{
 				if (!ec)
 				{
-					//boost::make_shared<UserSession>(std::move(socket));
+					boost::make_shared<ServerSession>(std::move(socket));
 				}
 				//접속 실패 다음 accept 시도
 				try_accept();
@@ -45,6 +44,6 @@ private:
 	boost::asio::io_context m_IoContext;
 	tcp::endpoint p_EndPoint;
 	tcp::acceptor m_Accepter;
-	 	
+
 
 };

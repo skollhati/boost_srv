@@ -24,7 +24,6 @@ public:
 		//C++11에서는 정적 지역 변수 초기화 코드가 멀티스레드 환경에서도 딱 한번 실행
 		//thread-safe
 
-		//private한 생성자를 boost::shared_ptr은 호출이 불가능함 그러므로 일반 포인터와 new를 이용
 		static CustomObjectPool<T>* instance = new CustomObjectPool<T>(nSize, maxSize, gMethod, resetMethod);
 
 		return instance;

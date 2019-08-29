@@ -11,18 +11,19 @@
 #include "BoostBredis.h"
 #include "CustomObjectPool.h"
 
-BoostBredis* InitSetBoostBredis(BoostBredis* b)
+boost::shared_ptr<BoostBredis> InitSetBoostBredis(boost::shared_ptr<BoostBredis> b)
 {
 	b->SetBredis();
 	
 	return b;
 }
 
-BoostBredis* ResetBoostBredis(BoostBredis* b)
+boost::shared_ptr<BoostBredis> ResetBoostBredis(boost::shared_ptr<BoostBredis> b)
 {
 	b->ResetBredis();
 	return b;
 }
+
 enum
 {
 	LOG_RECORDS_TO_WRITE = 10000,
@@ -45,10 +46,10 @@ void thread_fun(boost::barrier& bar)
 }
 int main()
 {
-	BoostLogger boostLogger;
-    
-	//logging::add_common_attributes();
 	using namespace logging::trivial;
+	BoostLogger boostLogger;
+	
+	
 
 	// Add it to the core
 	logging::core::get()->add_sink(boostLogger.getSink());
@@ -56,29 +57,14 @@ int main()
 	// Add some attributes too
 	logging::core::get()->add_global_attribute("TimeStamp", attrs::local_clock());
 	logging::core::get()->add_global_attribute("RecordID", attrs::counter< unsigned int >());
-
-	// Create logging threads
-	boost::barrier bar(THREAD_COUNT);
-	boost::thread_group threads;
-	for (unsigned int i = 0; i < THREAD_COUNT; ++i)
-		threads.create_thread(boost::bind(&thread_fun, boost::ref(bar)));
-
-	// Wait until all action ends
-	threads.join_all();
 	
-	CustomObjectPool<BoostBredis>* cop ;
-	cop->instance(5, 10, &InitSetBoostBredis, &ResetBoostBredis);
+	auto co = CustomObjectPool<BoostBredis>::instance(5, 10, InitSetBoostBredis, ResetBoostBredis);
+
+	std::cout << "test";
 
 
 }
 
 
 
-//BOOST_LOG_SCOPED_THREAD_TAG("ThreadID", boost::this_thread::get_id());
-//BOOST_LOG_SEV(global_lg::get(), trace) << "A trace severity message";
-//BOOST_LOG_SEV(global_lg::get(), debug) << "A debug severity message";
-//BOOST_LOG_SEV(global_lg::get(), info) << "An informational severity message";
-//BOOST_LOG_SEV(global_lg::get(), warning) << "A warning severity message";
-//BOOST_LOG_SEV(global_lg::get(), error) << "An error severity message";
-//BOOST_LOG_SEV(global_lg::get(), fatal) << "A fatal severity message";
-//LFC1_LOG_TRACE(global_lg::get(),error)<<"test";
+

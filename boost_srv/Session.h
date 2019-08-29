@@ -1,5 +1,9 @@
 #pragma once
 #include "stdafx.h"
+#include <boost/asio.hpp>
+#include <boost/asio/ip/address.hpp>
+
+using namespace boost::asio::ip;
 
 enum STATE {
 	UNAUTH,
@@ -7,33 +11,54 @@ enum STATE {
 	LOBBY,
 	MARKET,
 	WAITING,
-	GAME
+	LOADING,
+	GAME,
+	ADJUSTMENT
 };
 
 typedef struct USERINFO
 {
 	std::string name;
 	std::string user_id;
-	std::string user_grade;
+	int user_grade;
 	int user_level;
 	int auth_idx;
-	STATE state;
+	
 };
 
 class UserSession
 {
 public:
-	UserSession();
-	virtual ~UserSession();
-
-	void ChangeState(STATE state)
+	UserSession() = default;
+	
+	UserSession(tcp::socket socket):m_Socket(std::move(socket))
 	{
-		m_UserInfo.state = state;
+		
 	}
+
+	virtual ~UserSession();
+	
+	void SetUserInfo(USERINFO& userInfo)
+	{
+		m_UserInfo = userInfo;
+	}
+	
+	int ChangeState(STATE state)
+	{
+		
+		//redis¿¡ ³Ö±â
+		return 0;
+	}
+
+	STATE GetNowState()
+	{
+
+	}
+
 
 
 private:
 	USERINFO m_UserInfo;
-	   	 
-
+	tcp::socket m_Socket;
+	
 };
